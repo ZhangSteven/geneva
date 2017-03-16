@@ -42,6 +42,15 @@ def get_date_format():
 
 
 
+def get_output_directory():
+	global config
+	if config['directory']['output'] == '':
+		return get_current_directory()
+	else:
+		return config['directory']['output']
+
+
+
 def to_date(date_string, fmt=get_date_format()):
 	try:
 		if fmt == 'yyyy-mm-dd':

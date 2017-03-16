@@ -44,41 +44,6 @@ def read_content3():
 
 
 
-def read_taxlot(csvfile):
-	"""
-	Read the tax lot report, separator is tab.
-	"""
-	reader = csv.DictReader(csvfile, delimiter='\t', restval='')
-	content = []
-	i = 1
-	for row in reader:
-		logger.debug('read_taxlot(): reading record {0}'.format(i))
-		if row['SortByDescription'] == '' and row['ThenByDescription'] == '':
-			logger.debug('read_taxlot(): it\'s a blank line')
-			break	# it's a blank line
-
-		for key in row:
-			if key in ['Quantity', 'OriginalFace', 'UnitCost', 'CostBook', 
-						'MarketValueBook', 'UnrealizedPriceGainLossBook', 
-						'UnrealizedFXGainLossBook', 'AccruedAmortBook', 
-						'AccruedInterestBook']:
-	
-				row[key] = to_float(row[key])
-
-			elif key == 'MarketPrice':
-				try:
-					row[key] = to_float(row[key])
-				except:
-					logger.warning('market price is not available for record {0}'.format(i))
-		
-		content.append(row)
-		i = i + 1
-	# end of for
-
-	return content
-
-
-
 def show(content):
 	for record in content:
 		for key in record:
