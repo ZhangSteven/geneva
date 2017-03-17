@@ -315,7 +315,7 @@ if __name__ == '__main__':
 			print('{0} is not a valid directory'.format(folder))
 			sys.exit(1)
 
-		files = glob.glob(folder+'\\*.xls*')
+		files = glob.glob(folder+'\\*.txt')
 
 	else:
 		print('Please provide either --file or --folder input')
@@ -325,6 +325,7 @@ if __name__ == '__main__':
 	fx_final = {}
 	for input_file in files:
 		with open(input_file, newline='', encoding='utf-16') as f:
+			print('reading {0}'.format(input_file))
 			taxlots, parameters = read_report(f)
 			portfolio_taxlots[get_portfolio_id(parameters)] = taxlots
 
@@ -334,5 +335,5 @@ if __name__ == '__main__':
 			merge_fx(fx_final, get_fx_rate(taxlots))
 
 	for portfolio_id in portfolio_taxlots:
-		write_csv(filter_out_cash(merge_lots(add_info(taxlots, fx_final))),
+		write_csv(filter_out_cash(merge_lots(add_info(portfolio_taxlots[portfolio_id], fx_final))),
 					portfolio_id)
