@@ -5,7 +5,7 @@ Test the read_holding() method from open_holding.py
 
 import unittest2
 from geneva.taxlot import read_report, get_fx_rate, add_info, merge_lots, \
-                            get_portfolio_id
+                            get_portfolio_id, merge_fx, InconsistentFXRate
 from geneva.utility import get_current_directory
 from os.path import join
 
@@ -53,13 +53,62 @@ class TestTaxlot(unittest2.TestCase):
 
 
 
+    def test_merge_fx(self):
+        filename = join(get_current_directory(), 'samples', 'sample taxlot1.txt')
+        fx_final = {}
+        with open(filename, newline='', encoding='utf-16') as f:
+            taxlots, parameters = read_report(f)
+            fx = get_fx_rate(taxlots)
+            self.assertEqual(len(fx), 2)
+            self.assertAlmostEqual(fx['USD'], 0.12872995)
+            self.assertAlmostEqual(fx['HKD'], 1.0)
+            # no CNY fx because CNY balance is below 1,000,000
+
+        merge_fx(fx_final, fx)
+
+        filename = join(get_current_directory(), 'samples', 'sample taxlot2.txt')
+        with open(filename, newline='', encoding='utf-16') as f:
+            taxlots, parameters = read_report(f)
+            fx = get_fx_rate(taxlots)
+            self.assertEqual(len(fx), 3)
+            self.assertAlmostEqual(fx['CNY'], 0.8897042)
+            self.assertAlmostEqual(fx['USD'], 0.128729809)  # different from above
+            self.assertAlmostEqual(fx['HKD'], 1.0)
+
+        merge_fx(fx_final, fx)
+        self.assertEqual(len(fx_final), 3)
+        self.assertAlmostEqual(fx_final['CNY'], 0.8897042)
+        self.assertAlmostEqual(fx_final['USD'], 0.12872995)  # use the first USD fx
+        self.assertAlmostEqual(fx_final['HKD'], 1.0)
+
+
+
+    def test_merge_fx_error(self):
+        filename = join(get_current_directory(), 'samples', 'sample taxlot1.txt')
+        fx_final = {}
+        with open(filename, newline='', encoding='utf-16') as f:
+            taxlots, parameters = read_report(f)
+            fx = get_fx_rate(taxlots)
+
+        merge_fx(fx_final, fx)
+
+        filename = join(get_current_directory(), 'samples', 'sample taxlot3.txt')
+        with open(filename, newline='', encoding='utf-16') as f:
+            taxlots, parameters = read_report(f)
+            fx = get_fx_rate(taxlots)
+
+        with self.assertRaises(InconsistentFXRate):
+            merge_fx(fx_final, fx)  # USD fx inconsistent
+
+
+
     def test_add_info(self):
         filename = join(get_current_directory(), 'samples', 'test-12345 taxlot.txt')
         with open(filename, newline='', encoding='utf-16') as f:
             taxlots, parameters = read_report(f)
             taxlots = add_info(taxlots, get_fx_rate(taxlots))
             self.assertEqual(len(taxlots), 10)
-            self.verify_lot1(taxlots[0])    # cash lot shouldn't change
+            self.verify_lot1(taxlots[0], True)    # cash lot shouldn't change
             self.verify_added_lot1(taxlots[1])  # CNY
             self.verify_added_lot2(taxlots[9])  # USD
             self.verify_added_lot3(taxlots[4])  # HKD
@@ -76,11 +125,15 @@ class TestTaxlot(unittest2.TestCase):
 
 
 
-    def verify_lot1(self, record):
+    def verify_lot1(self, record, currency_field_added=False):
         """
         First tax lot in test-12345 taxlot.txt
         """
-        self.assertEqual(len(record), 18)
+        if currency_field_added:    # add_info() function adds a currency field
+            self.assertEqual(len(record), 19)
+        else:
+            self.assertEqual(len(record), 18)
+
         self.assertEqual(record['SortByDescription'], 'Chinese Renminbi Yuan')
         self.assertEqual(record['TaxLotID'], '')
         self.assertAlmostEqual(record['Quantity'], 8533168.41)
@@ -111,7 +164,7 @@ class TestTaxlot(unittest2.TestCase):
         """
         First CNY bond tax lot in test-12345 taxlot.txt
         """
-        self.assertEqual(len(record), 22)
+        self.assertEqual(len(record), 23)
         self.assertEqual(record['SortByDescription'], 'Chinese Renminbi Yuan')
         self.assertEqual(record['TaxLotDescription'], 'BJEHF 6.15 08/07/21')
         self.assertAlmostEqual(record['TaxLotID'], '1008871')
@@ -122,6 +175,7 @@ class TestTaxlot(unittest2.TestCase):
         self.assertAlmostEqual(record['CostBook'], 176503.01)
         self.assertEqual(record['InvestID'], 'HK0000120748 HTM')
         self.assertAlmostEqual(record['AccruedAmortBook'], 3167.02)
+        self.assertEqual(record['Currency'], 'CNY')
         self.assertAlmostEqual(record['AmortUnitCostLocal'], 97.59164113)
         self.assertAlmostEqual(record['AccruedInterestLocal'], 953.8429529)
         self.assertAlmostEqual(record['TotalAmortValueLocal'], 150269.053881)
@@ -132,7 +186,7 @@ class TestTaxlot(unittest2.TestCase):
         """
         Last USD bond tax lot in test-12345 taxlot.txt
         """
-        self.assertEqual(len(record), 22)
+        self.assertEqual(len(record), 23)
         self.assertEqual(record['SortByDescription'], 'United States Dollar')
         self.assertEqual(record['TaxLotDescription'], 'HKCGAS 6.25 08/07/18 REGS')
         self.assertAlmostEqual(record['TaxLotID'], '1008876')
@@ -142,6 +196,7 @@ class TestTaxlot(unittest2.TestCase):
         self.assertAlmostEqual(record['CostBook'], 2396723.87)
         self.assertAlmostEqual(record['AccruedAmortBook'], -82492.55)
         self.assertEqual(record['InvestID'], 'USY32358AA46 HTM')
+        self.assertEqual(record['Currency'], 'USD')
         self.assertAlmostEqual(record['AmortUnitCostLocal'], 109.8669401)
         self.assertAlmostEqual(record['AccruedInterestLocal'], 1828.1249195)
         self.assertAlmostEqual(record['TotalAmortValueLocal'], 298468.8630571)
@@ -152,7 +207,7 @@ class TestTaxlot(unittest2.TestCase):
         """
         First HKD bond tax lot in test-12345 taxlot.txt
         """
-        self.assertEqual(len(record), 22)
+        self.assertEqual(len(record), 23)
         self.assertEqual(record['SortByDescription'], 'Hong Kong Dollar')
         self.assertEqual(record['TaxLotDescription'], 'CHMERC 6 03/21/22')
         self.assertAlmostEqual(record['TaxLotID'], '1008877')
@@ -162,6 +217,7 @@ class TestTaxlot(unittest2.TestCase):
         self.assertAlmostEqual(record['CostBook'], 752220)
         self.assertAlmostEqual(record['AccruedAmortBook'], 1666.29)
         self.assertEqual(record['InvestID'], 'HK0000175916 HTM')
+        self.assertEqual(record['Currency'], 'HKD')
         self.assertAlmostEqual(record['AmortUnitCostLocal'], 99.72040873)
         self.assertAlmostEqual(record['AccruedInterestLocal'], 21872.22)
         self.assertAlmostEqual(record['TotalAmortValueLocal'], 775758.51)
@@ -173,7 +229,7 @@ class TestTaxlot(unittest2.TestCase):
         Merged lot of the first and second CNY bond tax lot in
         test-12345 taxlot.txt
         """
-        self.assertEqual(len(record), 22)
+        self.assertEqual(len(record), 23)
         self.assertEqual(record['SortByDescription'], 'Chinese Renminbi Yuan')
         self.assertEqual(record['TaxLotDescription'], 'BJEHF 6.15 08/07/21')
         self.assertEqual(record['TaxLotID'], '1008871-1008872')

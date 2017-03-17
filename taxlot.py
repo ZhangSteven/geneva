@@ -15,7 +15,7 @@ import csv, re
 class UnrecognizedCurrency(Exception):
 	pass
 
-class FXGenerationError(Exception):
+class InconsistentFXRate(Exception):
 	pass
 
 class TaxLotNotFound(Exception):
@@ -105,10 +105,11 @@ def add_info(taxlots, fx):
 		example, fx['USD'] = 0.1282 means 1 HKD is equal to 0.1282 USD.
 	"""
 	for taxlot in taxlots:
+		taxlot['Currency'] = get_taxlot_currency(taxlot)
 		if is_cash_lot(taxlot):
 			continue
 
-		fxrate = fx[get_taxlot_currency(taxlot)]
+		fxrate = fx[taxlot['Currency']]
 		taxlot['AmortUnitCostLocal'] = taxlot['UnitCost'] + \
 										taxlot['AccruedAmortBook']/taxlot['Quantity']*fxrate*100
 		taxlot['AccruedInterestLocal'] = taxlot['AccruedInterestBook']*fxrate
@@ -160,15 +161,28 @@ def get_fx_rate(taxlots):
 	fx = {}
 	fx['HKD'] = 1.0
 	for taxlot in taxlots:
-		if is_cash_lot(taxlot) and get_taxlot_currency(taxlot) != 'HKD':
-			if taxlot['Quantity'] < 10000:
-				logger.error('get_fx_rate(): currency {0} balance {1} is too low'.
-								format(get_taxlot_currency(taxlot), taxlot['Quantity']))
-				raise FXGenerationError()
-
+		if is_cash_lot(taxlot) and get_taxlot_currency(taxlot) != 'HKD' \
+			and taxlot['Quantity'] > 1000000:
+			# large quantity is needed to get enough precision
 			fx[get_taxlot_currency(taxlot)] = taxlot['Quantity']/taxlot['MarketValueBook']
 
 	return fx
+
+
+
+def merge_fx(fx_a, fx_b):
+	"""
+	Merge the fx information in fx_b into fx_a.
+	"""
+	for currency in fx_b:
+		if currency in fx_a:
+			if abs(fx_a[currency] - fx_b[currency] > 0.000001):
+				logger.error('merge_fx(): inconsistent fx rate for {0}, {1}, {2}'.
+								format(currency, fx_a[currency], fx_b[currency]))
+				raise InconsistentFXRate()
+
+		else:
+			fx_a[currency] = fx_b[currency]
 
 
 
@@ -266,8 +280,6 @@ def write_csv(taxlots, portfolio_id, output_dir=get_output_directory()):
 			for fld in fields:
 				if fld == 'Portfolio':
 					item = portfolio_id
-				elif fld == 'Currency':
-					item = get_taxlot_currency(taxlot)
 				else:
 					try:
 						item = taxlot[fld]
@@ -309,8 +321,18 @@ if __name__ == '__main__':
 		print('Please provide either --file or --folder input')
 		sys.exit(1)
 
+	portfolio_taxlots = {}
+	fx_final = {}
 	for input_file in files:
 		with open(input_file, newline='', encoding='utf-16') as f:
 			taxlots, parameters = read_report(f)
-			write_csv(filter_out_cash(merge_lots(add_info(taxlots, get_fx_rate(taxlots)))),
-						get_portfolio_id(parameters))
+			portfolio_taxlots[get_portfolio_id(parameters)] = taxlots
+
+			# because we cannot expect to derive from cash balances of
+			# each portfolio the FX information we need, we loop through
+			# all portfolios to get the complete fx information.
+			merge_fx(fx_final, get_fx_rate(taxlots))
+
+	for portfolio_id in portfolio_taxlots:
+		write_csv(filter_out_cash(merge_lots(add_info(taxlots, fx_final))),
+					portfolio_id)
