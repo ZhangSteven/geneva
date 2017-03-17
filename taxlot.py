@@ -5,7 +5,8 @@
 
 
 
-from geneva.utility import logger, to_date, to_float, get_output_directory
+from geneva.utility import logger, to_date, to_float, get_output_directory, \
+							get_input_directory
 from os.path import join
 import csv, re
 
@@ -24,8 +25,19 @@ class TaxLotNotFound(Exception):
 
 def read_report(csvfile):
 	"""
-	Read the tax lot report, separator is tab.
+	Read the tax lot appraisal with accruals report, return the tax lots,
+	parameters, errors.
 	"""
+	taxlots = read_taxlot(csvfile)
+
+	# There is one and only one blank line in between tax lots and parameters,
+	# and that blank line has been reached at the end of read_taxlot() function.
+	parameters = read_parameter(csvfile)
+	return taxlots, parameters
+
+
+
+def read_taxlot(csvfile):
 	reader = csv.DictReader(csvfile, delimiter='\t', restval='')
 	taxlots = []
 	i = 1
@@ -57,6 +69,23 @@ def read_report(csvfile):
 
 
 
+def read_parameter(csvfile):
+	reader = csv.DictReader(csvfile, delimiter='\t', restval='')
+	parameters = []
+	i = 1
+	for row in reader:
+		logger.debug('read_parameter(): reading parameter {0}'.format(i))
+		if row['ParameterName'] == '':
+			logger.debug('read_parameter(): it\'s a blank line')
+			break	# it's a blank line
+
+		parameters.append(row)
+		i = i + 1
+
+	return parameters
+
+
+
 def add_info(taxlots, fx):
 	"""
 	Add the following fields to each non-cash tax lot:
@@ -81,9 +110,9 @@ def add_info(taxlots, fx):
 
 		fxrate = fx[get_taxlot_currency(taxlot)]
 		taxlot['AmortUnitCostLocal'] = taxlot['UnitCost'] + \
-										taxlot['AccruedAmortBook']/taxlot['Quantity']*fxrate
+										taxlot['AccruedAmortBook']/taxlot['Quantity']*fxrate*100
 		taxlot['AccruedInterestLocal'] = taxlot['AccruedInterestBook']*fxrate
-		taxlot['TotalAmortValueLocal'] = taxlot['AmortUnitCostLocal']*taxlot['Quantity'] + \
+		taxlot['TotalAmortValueLocal'] = taxlot['AmortUnitCostLocal']*taxlot['Quantity']/100 + \
 											taxlot['AccruedInterestLocal']
 		m = re.search('(\([A-Z0-9]{12}.*\))', taxlot['InvestmentDescription'])
 		if m is None:
@@ -213,6 +242,15 @@ def filter_out_cash(taxlots):
 
 
 
+def get_portfolio_id(parameters):
+	for p in parameters:
+		if p['ParameterName'] == 'Portfolio':
+			return p['ParameterValue']
+
+	return ''
+
+
+
 def write_csv(taxlots, portfolio_id, output_dir=get_output_directory()):
 	with open(join(output_dir, portfolio_id+'_output.csv'), 'w', newline='') as csvfile:
 		file_writer = csv.writer(csvfile, delimiter=',')
@@ -242,7 +280,37 @@ def write_csv(taxlots, portfolio_id, output_dir=get_output_directory()):
 
 
 
+
 if __name__ == '__main__':
-	with open('samples\\test-12345 taxlot.txt', newline='', encoding='utf-16') as f:
-		taxlots = read_report(f)
-		write_csv(filter_out_cash(merge_lots(add_info(taxlots, get_fx_rate(taxlots)))), 'test-12345')
+	import argparse, sys, glob
+	from os.path import isdir, exists
+	parser = argparse.ArgumentParser(description='Read tax lot files and create csv output containing amortized cost and accrued interest in local currency.')
+	parser.add_argument('--folder', help='folder containing multiple tax lot files', required=False)
+	parser.add_argument('--file', help='input tax lot file', required=False)
+	args = parser.parse_args()
+
+	if not args.file is None:
+		file = join(get_input_directory(), args.file)
+		if not exists(file):
+			print('{0} does not exist'.format(file))
+			sys.exit(1)
+
+		files = [file]
+
+	elif not args.folder is None:
+		folder = join(get_input_directory(), args.folder)
+		if not exists(folder) or not isdir(folder):
+			print('{0} is not a valid directory'.format(folder))
+			sys.exit(1)
+
+		files = glob.glob(folder+'\\*.xls*')
+
+	else:
+		print('Please provide either --file or --folder input')
+		sys.exit(1)
+
+	for input_file in files:
+		with open(input_file, newline='', encoding='utf-16') as f:
+			taxlots, parameters = read_report(f)
+			write_csv(filter_out_cash(merge_lots(add_info(taxlots, get_fx_rate(taxlots)))),
+						get_portfolio_id(parameters))
