@@ -2,7 +2,7 @@
 __pycache__/
 
 # ignore the log file
-*.log
+logs/*
 
 # ignore the output csv files
 *.csv
