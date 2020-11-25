@@ -19,10 +19,15 @@ logger = logging.getLogger(__name__)
 """
 	[Iterator] lines => [Iterator] positions, [Dictionary] metaData
 
-	Read lines from Geneva report, returns two things
+	Lines from a Geneva report are divided into sections by blank lines. 
+	If the report is about a single portfolio or consolidate = group for
+	a group of portfolios, then the first section is its positions and the
+	second section is its meta data.
 
-	1) meta data;
-	2) raw positions;
+	The function groupby() returns an iterator, according to our observation
+	if we consume the 3rd section (the meta data) first, then first section
+	(positions) we will get nothing. So we must use 'list' to get the positions
+	first, then get the meta data.
 """
 readReport = compose(
 	lambda group: ( getRawPositions(pop(group))
@@ -97,7 +102,7 @@ def getMetadata(lines):
 
 def getRawPositions(lines):
 	"""
-	[Iterable] lines => [Iterable] Raw Positions
+	[Iterable] lines => [List] Raw Positions
 
 	Assume: each line is an iterator over its columns.
 	"""
@@ -109,7 +114,8 @@ def getRawPositions(lines):
 
 	return \
 	compose(
-		partial(map, dict)
+		list
+	  , partial(map, dict)
 	  , lambda t: map(partial(zip, t[0]), t[1])
 	  , lambda lines: (getHeadersFromLine(pop(lines)), lines)
 	)(lines)

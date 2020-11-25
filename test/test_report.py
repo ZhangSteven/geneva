@@ -17,6 +17,13 @@ class TestReport(unittest2.TestCase):
 	def testReadExcelReport(self):
 		inputFile = join(getCurrentDirectory(), 'samples', 'taxlot01.xlsx')
 		positions, metaData = readExcelReport(inputFile)
+		self.verifyMetaData(metaData)
+		self.assertEqual(38, len(positions))
+		self.verifyTaxlotPosition(positions[0])
+
+
+
+	def verifyMetaData(self, metaData):
 		self.assertEqual('20051', metaData['Portfolio'])
 		self.assertEqual('HKD', metaData['BookCurrency'])
 		self.assertEqual('2020-09-30', metaData['PeriodEndDate'])
@@ -24,12 +31,7 @@ class TestReport(unittest2.TestCase):
 
 
 
-	# def verifyTrade1(self, trade):
-	# 	self.assertEqual('666666', trade['Portfolio_code'])
-	# 	self.assertEqual('REPO', trade['Txn_type'])
-	# 	self.assertEqual('Close', trade['Txn_sub_type'])
-	# 	self.assertEqual('USD', trade['Loan_ccy'])
-	# 	self.assertEqual('02/03/2020', trade['Mature_date'])
-	# 	self.assertEqual(1200000, trade['Col_Qty'])
-	# 	self.assertEqual('SOCG-REPO', trade['Broker'])
-	# 	self.assertEqual('226819', trade['Cust_ref'])
+	def verifyTaxlotPosition(self, position):
+		self.assertEqual('Chinese Renminbi Yuan (CNY)', position['InvestmentDescription'])
+		self.assertEqual(6.91, position['Quantity'])
+		self.assertEqual(1.1259, position['UnitCost'])
