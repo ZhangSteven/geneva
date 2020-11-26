@@ -11,8 +11,52 @@ from utils.utility import fromExcelOrdinal
 from itertools import takewhile, groupby
 from functools import partial
 from os.path import abspath, dirname
+import codecs
 import logging
 logger = logging.getLogger(__name__)
+
+
+
+"""
+	[Iterable] lines => [Dictionary] meta data.
+
+	Lines in the meta data section looks like:
+
+	ParameterName	ParameterValue																
+	AccountingCalendar	InHouse_AccountingCalendar																
+	AccountingFilters																	
+	...
+	BookCurrency	HKD
+"""
+getRawMetadata = compose(
+	dict
+  , partial(map, lambda line: (line[0], line[1]) if len(line) > 1 else (line[0], ''))
+)
+
+
+
+"""
+	[Iterator] line => [List] headers
+"""
+getHeadersFromLine = compose(
+	list
+  , partial(takewhile, lambda s: s.strip() != '')
+  , partial(map, str)
+)
+
+
+
+"""
+	[Iterable] lines => [List] Raw Positions
+
+	Assume: each line is an iterator over its columns.
+"""
+getRawPositions = compose(
+	list
+  , partial(map, dict)
+  , lambda t: map(partial(zip, t[0]), t[1])
+  , lambda lines: (getHeadersFromLine(pop(lines)), lines)
+)
 
 
 
@@ -31,7 +75,7 @@ logger = logging.getLogger(__name__)
 """
 readReport = compose(
 	lambda group: ( getRawPositions(pop(group))
-				  , getMetadata(pop(group))
+				  , getRawMetadata(pop(group))
 				  )
   , partial(map, lambda el: el[1])
   , partial(filter, lambda el: el[0] == False)
@@ -42,9 +86,6 @@ readReport = compose(
 
 """
 	[String] file => [Iterable] lines
-
-	Read a Geneva report in Excel file. The report is generated as export
-	in 'Comma Delimited' format then saved as Excel (xlsx).
 """
 excelFileToLines = lambda file: \
 	worksheetToLines(open_workbook(file).sheet_by_index(0))
@@ -54,13 +95,12 @@ excelFileToLines = lambda file: \
 """
 	[String] file => [Iterator] positions, [Dictionary] metaData
 
-	Read Geneva report (csv saved as Excel), returns two things
-
-	1) meta data;
-	2) raw positions;
+	Read a Geneva report in Excel file. The report is generated as export
+	in 'Comma Delimited' format then saved as Excel (xlsx).
 """
 readExcelReport = compose(
-	readReport
+	lambda t: (t[0], getExcelMetadata(t[1]))
+  , readReport
   , excelFileToLines
 )
 
@@ -79,19 +119,16 @@ getCurrentDirectory = lambda : \
 
 
 
-def getMetadata(lines):
+def getExcelMetadata(metaData):
 	"""
-	[Iterable] lines => [Dictionary] meta data.
-
+	[Dictonary] raw metadata => [Dictionary] metadata
 	"""
 	updateFields = { 'Portfolio': toStringIfFloat
 				   , 'PeriodEndDate': toDateTimeString
 				   , 'PeriodStartDate': toDateTimeString
 				   }
 
-	d = dict(map( lambda line: (line[0], line[1]) if len(line) > 1 else (line[0], '')
-				, lines))
-
+	d = metaData.copy()
 	for key in d:
 		if key in updateFields:
 			d[key] = updateFields[key](d[key])
@@ -100,22 +137,35 @@ def getMetadata(lines):
 
 
 
-def getRawPositions(lines):
+def readTxtReport(file, encoding):
 	"""
-	[Iterable] lines => [List] Raw Positions
+	[String] file => [Iterator] positions, [Dictionary] metaData
 
-	Assume: each line is an iterator over its columns.
+	Read a Geneva report in txt file. The report is generated as below:
+
+	1. Export in 'Comma Delimited' format from Geneva;
+	2. The report is opened in Excel, then save as a text format:
+		Text (tab delimited), Unicode Text, Csv (comma delimited)
+
+	This function is to read "Text (tab delimited)" format.
 	"""
-	getHeadersFromLine = compose(
-		list
-	  , partial(takewhile, lambda s: s.strip() != '')
-	  , partial(map, str)
-	)
 
-	return \
-	compose(
-		list
-	  , partial(map, dict)
-	  , lambda t: map(partial(zip, t[0]), t[1])
-	  , lambda lines: (getHeadersFromLine(pop(lines)), lines)
-	)(lines)
+	# read file to lines
+	# parse line to list of columns
+	# read report
+	# getTxtMetadata
+
+	def fileToLines(fn, encoding):
+		with codecs.open(fn, 'r', encoding=encoding) as file:
+			for line in file:
+				yield line
+
+
+	counter = 0
+	for line in fileToLines(file, encoding):
+		print(line.strip().split('\t'))
+		counter = counter + 1
+		if counter > 3:
+			break
+
+	return 0

@@ -2,7 +2,7 @@
 # 
 
 import unittest2
-from geneva.report import getCurrentDirectory, readExcelReport
+from geneva.report import getCurrentDirectory, readExcelReport, readTxtReport
 from os.path import join
 
 
@@ -20,6 +20,18 @@ class TestReport(unittest2.TestCase):
 		self.verifyMetaData(metaData)
 		self.assertEqual(38, len(positions))
 		self.verifyTaxlotPosition(positions[0])
+
+
+
+	def testReadTxtReport(self):
+		inputFile = join(getCurrentDirectory(), 'samples', 'taxlot01_text_tab.txt')
+		readTxtReport(inputFile, 'utf-8')
+		
+
+
+	def testReadTxtReport2(self):
+		inputFile = join(getCurrentDirectory(), 'samples', 'taxlot01_text_unicode.txt')
+		readTxtReport(inputFile, 'utf-16')
 
 
 

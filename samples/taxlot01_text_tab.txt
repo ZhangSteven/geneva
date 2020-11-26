@@ -1,0 +1,185 @@
+SortByDescription	ThenByDescription	InvestmentDescription	TaxLotDescription	TaxLotID	TaxLotDate	Quantity	OriginalFace	UnitCost	MarketPrice	CostBook	MarketValueBook	UnrealizedPriceGainLossBook	UnrealizedFXGainLossBook	AccruedAmortBook	AccruedInterestBook	ExtendedDescription	Description3
+Chinese Renminbi Yuan	Cash and Equivalents	Chinese Renminbi Yuan (CNY)	Chinese Renminbi Yuan-BOCHK OnHand			6.91	0	1.1259	1.1412	7.78	7.89	0	0.11	0	0		
+Chinese Renminbi Yuan	Fixed Deposit	ABCHK Fixed Deposit 3 13/10/2020	ABCHK Fixed Deposit 3 13/10/2020	1135995	9/29/2020	"4,500,000.00"	0	100	NA	"5,116,637.32"	"5,135,473.42"	0	"18,836.10"	0	855.91		
+Chinese Renminbi Yuan	Fixed Deposit	IB Fixed Deposit 2.7 14/10/2020	IB Fixed Deposit 2.7 14/10/2020	1136644	9/30/2020	"14,887,726.01"	0	100	NA	"16,990,115.83"	"16,990,115.83"	0	0	0	"1,274.26"		
+Hong Kong Dollar	Cash and Equivalents	Hong Kong Dollar (HKD)	Hong Kong Dollar-ABCHK OnHand			4.11	0	1	1	4.11	4.11	0	0	0	0		
+Hong Kong Dollar	Cash and Equivalents	Hong Kong Dollar (HKD)	Hong Kong Dollar-BOCHK OnHand			"174,361.63"	0	1	1	"174,361.63"	"174,361.63"	0	0	0	0		
+Hong Kong Dollar	Cash and Equivalents	Hong Kong Dollar (HKD)	Hong Kong Dollar-BOCHK Receivable			"25,638.37"	0	1	1	"25,638.37"	"25,638.37"	0	0	0	0		
+Hong Kong Dollar	Cash and Equivalents	Hong Kong Dollar (HKD)	Hong Kong Dollar-CMBC OnHand			100	0	1	1	100	100	0	0	0	0		
+Hong Kong Dollar	Fixed Deposit	IB Fixed Deposit 0.51 06/10/2020	IB Fixed Deposit 0.51 06/10/2020	1135570	9/22/2020	"15,197,286.41"	0	100	NA	"15,197,286.41"	"15,197,286.41"	0	0	0	"1,911.11"		
+Hong Kong Dollar	Fixed Deposit	MSB Fixed Deposit 0.6875 12/10/2020	MSB Fixed Deposit 0.6875 12/10/2020	1136001	9/28/2020	"15,010,142.12"	0	100	NA	"15,010,142.12"	"15,010,142.12"	0	0	0	848.18		
+Hong Kong Dollar	Open-End Fund	CHINA LIFE FR-DIVER INC FD (CLFLDIF HK)	CHINA LIFE FR-DIVER INC FD	1033296	1/10/2017	"4,535,425.00"	0	11.1413	12.8768	"50,530,530.13"	"58,401,760.64"	"7,871,230.51"	0	0	0		
+United States Dollar	Cash and Equivalents	United States Dollar (USD)	United States Dollar-BOCHK OnHand			"1,150,012.39"	0	7.7508	7.75	"8,913,530.45"	"8,912,596.02"	0	-934.43	0	0		
+United States Dollar	Cash and Equivalents	United States Dollar (USD)	United States Dollar-CIB OnHand			192.48	0	7.8497	7.75	"1,510.91"	"1,491.72"	0	-19.19	0	0		
+United States Dollar	Corporate Bond	BOCAVI 2.625 09/17/30 REGS (US09681MAS70 HTM)	BOCAVI 2.625 09/17/30 REGS	1134572	9/9/2020	"2,000,000.00"	0	99.385	NA	"15,406,066.39"	"15,404,998.72"	0	"-1,391.34"	323.67	"15,822.92"	BOC AVIATION LTD BOCAVI 2 5/8 09/17/30	
+United States Dollar	Corporate Bond	CCAMCL 4.25 04/23/25 REGS (USG21184AB52 HTM)	CCAMCL 4.25 04/23/25 REGS	1013603	3/16/2016	"1,000,000.00"	0	96.589	NA	"7,495,306.40"	"7,603,600.10"	0	"-9,658.90"	"117,952.60"	"144,559.03"	CHINA CINDA FINANCE 2015 CCAMCL 4 1/4 04/23/25	
+United States Dollar	Corporate Bond	CHJMAO 6.75 04/15/21 REGS (USG3709DAA03 HTM)	CHJMAO 6.75 04/15/21 REGS	1013594	4/11/2011	"2,000,000.00"	0	100	NA	"15,565,168.72"	"15,500,000.00"	0	"-65,168.72"	0	"482,437.50"	FRANSHION DEVELOPMENT CHJMAO 6 3/4 04/15/21	
+United States Dollar	Corporate Bond	MSINS V4.95 PERP REGS (USJ4517MAA74)	MSINS V4.95 PERP REGS	1069190	2/27/2019	"4,000,000.00"	0	100	120.105	"31,398,800.00"	"37,232,550.00"	"6,232,550.00"	"-398,800.00"	0	"106,562.50"	MITSUI SUMITOMO INSURANC MSINS 4.95 PERP	
+United States Dollar	Corporate Bond	WPLAU 4.5 03/04/29 REGS (USQ98229AN94 HTM)	WPLAU 4.5 03/04/29 REGS	1068773	2/25/2019	"2,000,000.00"	0	99.817	NA	"15,668,873.39"	"15,475,306.17"	0	"-197,238.36"	"3,671.14"	"52,312.50"	WOODSIDE FINANCE LTD WPLAU 4 1/2 03/04/29	
+United States Dollar	Corporate Bond	CHIOLI 5.5 11/10/20 (XS0508012092 HTM)	CHIOLI 5.5 11/10/20	1013595	12/31/2011	"2,000,000.00"	0	94.128	NA	"14,605,465.25"	"15,485,691.33"	0	"-15,625.28"	"895,851.36"	"333,895.83"	CHINA OVRSEA FIN KY II CHIOLI 5 1/2 11/10/20	
+United States Dollar	Corporate Bond	CITPAK 6.1 03/05/25 (XS0893206747 HTM)	CITPAK 6.1 03/05/25	1013596	2/26/2013	"600,000.00"	0	100	NA	"4,644,000.00"	"4,650,000.00"	0	"6,000.00"	0	"20,485.83"	CITIC TELECOM INTL FIN CITPAK 6.1 03/05/25	
+United States Dollar	Corporate Bond	BOCAVI 4.375 05/02/23 EMTN (XS0925008533 HTM)	BOCAVI 4.375 05/02/23 EMTN	1013597	6/26/2013	"1,000,000.00"	0	88.103	NA	"6,822,696.32"	"7,453,817.16"	0	"5,286.13"	"625,834.71"	"140,334.20"	BOC AVIATION LTD BOCAVI 4 3/8 05/02/23	
+United States Dollar	Corporate Bond	CRHZCH 6 02/27/24 EMTN (XS1039273666 HTM)	CRHZCH 6 02/27/24 EMTN	1013598	4/21/2014	"1,500,000.00"	0	100.02	NA	"11,622,073.95"	"11,626,433.60"	0	"5,251.05"	-891.4	"65,875.00"	CHINA RESOURCES LAND LTD CRHZCH 6 02/27/24	
+United States Dollar	Corporate Bond	CHIOLI 5.95 05/08/24 (XS1063561499 HTM)	CHIOLI 5.95 05/08/24	1013599	4/29/2014	"1,000,000.00"	0	99.554	NA	"7,705,479.60"	"7,735,142.40"	0	"9,955.44"	"19,707.36"	"183,169.10"	CHINA OVERSEAS FIN KY VI CHIOLI 5.95 05/08/24	
+United States Dollar	Corporate Bond	CHITRA 5.625 11/03/24 (XS1125272143 HTM)	CHITRA 5.625 11/03/24	1013600	11/9/2015	"500,000.00"	0	104.95	NA	"4,061,565.00"	"3,972,851.81"	0	"5,247.49"	"-93,960.68"	"89,609.38"	KING POWER CAPITAL LTD CHITRA 5 5/8 11/03/24	
+United States Dollar	Corporate Bond	CHITRA 5.625 11/03/24 (XS1125272143 HTM)	CHITRA 5.625 11/03/24	1013601	11/10/2015	"1,000,000.00"	0	105.362	NA	"8,155,018.80"	"7,961,793.71"	0	"10,536.17"	"-203,761.26"	"179,218.75"	KING POWER CAPITAL LTD CHITRA 5 5/8 11/03/24	
+United States Dollar	Corporate Bond	CHITRA 5.625 11/03/24 (XS1125272143 HTM)	CHITRA 5.625 11/03/24	1013602	12/4/2015	"1,000,000.00"	0	105.432	NA	"8,160,436.80"	"7,965,969.41"	0	"10,543.24"	"-205,010.63"	"179,218.75"	KING POWER CAPITAL LTD CHITRA 5 5/8 11/03/24	
+United States Dollar	Corporate Bond	HRAM 5.5 01/16/25 EMTN (XS1165659514 HTM)	HRAM 5.5 01/16/25 EMTN	1013605	3/14/2016	"1,000,000.00"	0	105.554	NA	"8,190,990.40"	"7,981,562.02"	0	"-10,555.43"	"-198,872.95"	"88,802.08"	HUARONG FINANCE II HRAM 5 1/2 01/16/25	
+United States Dollar	Corporate Bond	HRAM 5.5 01/16/25 EMTN (XS1165659514 HTM)	HRAM 5.5 01/16/25 EMTN	1013606	4/26/2016	"2,000,000.00"	0	106.2	NA	"16,482,240.00"	"16,021,317.55"	0	"-21,239.99"	"-439,682.46"	"177,604.17"	HUARONG FINANCE II HRAM 5 1/2 01/16/25	
+United States Dollar	Corporate Bond	HRAM 5.5 01/16/25 EMTN (XS1165659514 HTM)	HRAM 5.5 01/16/25 EMTN	1013607	5/16/2016	"1,000,000.00"	0	107.45	NA	"8,338,120.00"	"8,063,684.43"	0	"-10,744.97"	"-263,690.60"	"88,802.08"	HUARONG FINANCE II HRAM 5 1/2 01/16/25	
+United States Dollar	Corporate Bond	CERCG 5.55 04/14/21 (XS1376566714 HTM)	CERCG 5.55 04/14/21	1013604	4/7/2016	"3,000,000.00"	0	96.618	NA	"22,492,670.40"	"23,153,650.14"	0	"-28,985.42"	"689,965.16"	"598,590.63"	CN ENERGY RESERVE & CHEM CERCG 5.55 04/14/21	
+United States Dollar	Corporate Bond	MINMET 4.2 07/27/26 (XS1450332256 HTM)	MINMET 4.2 07/27/26	1013608	7/21/2016	"5,000,000.00"	0	100.487	NA	"38,938,712.50"	"38,869,090.61"	0	-0.01	"-69,621.88"	"289,333.33"	MINMETALS BOUNTEOUS FIN MINMET 4.2 07/27/26	
+United States Dollar	Corporate Bond	CHUANT 4.625 09/26/21 (XS1852561031 HTM)	CHUANT 4.625 09/26/21	1067814	2/15/2019	"4,000,000.00"	0	99.66	NA	"31,288,057.68"	"30,959,035.05"	0	"-393,457.65"	"64,435.02"	"19,913.19"	SCIG INTRNTL FIN LTD CHUANT 4 5/8 09/26/21	
+United States Dollar	Corporate Bond	CMHI 4.375 08/06/23 (XS1856799421)	CMHI 4.375 08/06/23	1038474	7/30/2018	"3,000,000.00"	0	99.543	107.711	"23,437,897.07"	"25,042,807.50"	"1,899,060.00"	"-294,149.57"	0	"155,403.65"	CMHI FINANCE BVI CO LTD CMHI 4 3/8 08/06/23	
+United States Dollar	Corporate Bond	CINDBK V4.625 02/28/29 EMTN (XS1897158892)	CINDBK V4.625 02/28/29 EMTN	1068221	2/19/2019	"4,000,000.00"	0	99.586	105.685	"31,264,427.18"	"32,762,350.00"	"1,890,690.00"	"-392,767.18"	0	"131,427.08"	CHINA CITIC BANK INTL CINDBK 4 5/8 02/28/29	
+United States Dollar	Corporate Bond	ARAMCO 4.25 04/16/39 REGS (XS1982113463 HTM)	ARAMCO 4.25 04/16/39 REGS	1073814	4/17/2019	"4,000,000.00"	0	97.3	NA	"30,535,075.20"	"30,202,124.48"	0	"-372,075.25"	"39,124.53"	"603,854.17"	SAUDI ARABIAN OIL CO ARAMCO 4 1/4 04/16/39	
+United States Dollar	Corporate Bond	DBSSP V3.3 PERP GMTN (XS2122408854)	DBSSP V3.3 PERP GMTN	1114274	2/20/2020	"2,000,000.00"	0	100	100.018	"15,562,600.00"	"15,502,790.00"	"2,790.00"	"-62,600.00"	0	"48,308.33"	DBS GROUP HOLDINGS LTD DBSSP 3.3 PERP	
+United States Dollar	Corporate Bond	HYSAN V4.1 PERP (XS2123115029)	HYSAN V4.1 PERP	1114699	2/25/2020	"3,000,000.00"	0	100	97.57	"23,373,300.00"	"22,685,025.00"	"-564,975.00"	"-123,300.00"	0	"74,141.67"	ELECT GLOBAL INV LTD HYSAN 4.1 PERP	
+United States Dollar	Corporate Bond	SUNHUN 2.75 05/13/30 EMTN (XS2130065258 HTM)	SUNHUN 2.75 05/13/30 EMTN	1122400	5/6/2020	"3,000,000.00"	0	99.376	NA	"23,111,776.94"	"23,109,770.11"	0	"-6,856.96"	"4,850.13"	"245,093.75"	SUN HUNG KAI PROP (CAP) SUNHUN 2 3/4 05/13/30	
+United States Dollar	Open-End Fund	China Life Franklin First Seafront Multi-Income Fund SP	China Life Franklin First Seafront Multi-Income Fund SP	1111434	11/8/2019	"38,327.00"	0	99.9997	107.242	"30,009,581.78"	"31,854,547.01"	"2,151,197.18"	"-306,231.95"	0	0		
+																	
+ParameterName	ParameterValue																
+AccountingCalendar	InHouse_AccountingCalendar																
+AccountingFilters																	
+AccountingParameters	InHouseAccountingParameters																
+AccountingPeriod																	
+AccountingRule																	
+AccountingRunType	Dynamic																
+AccountingView																	
+AccrueOnSTIF	0																
+AccrueWithhold	0																
+AddendumPages	Short																
+AGAUser	szhang																
+AmortizationElection	DIF_Amortization																
+AmortizeOnUnrealizedDate	1/1/1950 0:00																
+AOCache																	
+AOCreateCache																	
+AOCreateDetail																	
+AOCreateRestart																	
+AOCreateSummary																	
+AOCutDate																	
+AOFreezepointAccountingTime																	
+AOMTMDailyChanges																	
+AONewCode																	
+AOReadCache																	
+AOUpdateCache																	
+AOUseSummary																	
+AppraisalDay	NextCalendarDay																
+BalancePercentage	1																
+BidAskClosing	0																
+BidAskPricing	Use Closing Prices																
+BookCurrency	HKD																
+BusinessCalendar	No_Holiday																
+BypassFLEConsolidatingFlag	0																
+ByPassRule	Do Not Bypass																
+ConsolidateLegalEntities	SeparateFundLegalEntities																
+CounterClosingRuleOverride																	
+CrossingCurrency	USD																
+CrossZeroOnCoverShort	0																
+CrossZeroOnDebt	0																
+CrossZeroOnEquity	0																
+CrossZeroOnFutures	1																
+CrossZeroOnOptions	0																
+DisableBooks	0																
+DisableCashManagement	0																
+DisableFreezepoints	0																
+DisableLDErrorRead	0																
+DisableLockdowns	0																
+DisableManualJE	0																
+DisableSnapshots	0																
+DisplayAdjustedCost	0																
+DisplayOriginalShareFace	0																
+EnableMarkToMarket	0																
+EnableRealTimePricing	0																
+EnableTimeSeries	0																
+EnableWashSales	0																
+ExcludeCommission	0																
+ExcludeNonCoveredTaxLotsFromWashSales	0																
+FiscalCalendar																	
+FreezeAccountingDate																	
+FreezeKnowledgeDate	1/1/1901 0:00																
+FundLegalEntity																	
+FundLegalEntityDescription																	
+FuturesClosingRuleOverride																	
+GainCalcMethod	Gain on Cost																
+GetKTimesFromDefaultCalendar	0																
+Group1	LocalBasisCurrency																
+Group1Field	Description																
+Group2	InvestmentType																
+Group2Field	Description																
+HybridHistoricalView	0																
+IgnoreSpecificLotClosing	0																
+IncludeNotionalValues	0																
+InventoryState	AllAssetsAndPayables																
+InventoryStateNotational	AllAssetsAndPayablesNotational																
+InvestmentClosingRuleOverride																	
+KnowledgeDate	11/26/2020 23:00																
+LotLevelOverrides																	
+LumpCashLots	1																
+LumpCrossGL	In Price G/L																
+LumpExpensesInSummaryLockdown	0																
+LumpNonCashLots	0																
+LumpSwapGL	0																
+ManagementFirm																	
+MarkLegalEntity	All																
+MarkStartDate																	
+MarkToMarketCashTransfer	0																
+MOERoundingMethod																	
+ParallelConsolidationChildren	0																
+PaydownGLasGainLoss	0																
+PeriodEndDate	9/30/2020 23:59																
+PeriodStartDate	1/1/1950 0:00																
+Portfolio	20051																
+PortfolioDescription	Inhouse Fund																
+PostDividendTaxLotDetail	0																
+PostValidationErrors	0																
+PriceSchedule	InHouse_Price Schedule																
+PriorKnowledgeDate	11/26/2020 0:00																
+RegionalSettings																	
+RelativeDate																	
+ReportPeriodEndDate	1/1/2037 0:00																
+requestType	ssrs																
+ScreenType																	
+SecondaryCounterClosingRuleOverride																	
+SecondaryFuturesClosingRuleOverride																	
+SecondaryInvestmentClosingRuleOverride																	
+SegregateIncome	0																
+SeparateFundLegalEntities	1																
+SettleFXCost	0																
+SnapshotUse	Do Not Create or Use																
+SQLBISRead																	
+SQLBISTag																	
+SQLBISWrite																	
+StyleName	e																
+TimeSeriesTransitionMarkMembers																	
+WashSalesCutoverDate	1/1/1901 0:00																
+WashSalesTaxableEndDate	1/1/1901 0:00																
+WithholdPurchasedSoldAI	0																
+																	
+ParameterName	ParameterValue																
+RUNREP Command Text	runf taxlotappacc --ReportPeriodEndDate 2037/01/01:00:00:00.00 -p 20051 -pe 2020/09/30 -k 2020/11/26:23:00:56 --AccountingCalendar InHouse_AccountingCalendar --requestType ssrs																
+																	
+EventNumber	ErrorMessage																
+22114	"TransType = Mark To Market, TranID = 1300, Portfolio = 20051, Investment = XS0925008533 HTM, CustAcct = None, EventDate = 09/30/2020, KnowledgeDate = 2020/11/26:23:00:56, Error = price lookup returned error.  Denomination = USD, Lookup Date = 2020/09/30:23:59:59. "																
+22114	"TransType = Mark To Market, TranID = 1300, Portfolio = 20051, Investment = XS0508012092 HTM, CustAcct = None, EventDate = 09/30/2020, KnowledgeDate = 2020/11/26:23:00:56, Error = price lookup returned error.  Denomination = USD, Lookup Date = 2020/09/30:23:59:59. "																
+22114	"TransType = Mark To Market, TranID = 1300, Portfolio = 20051, Investment = USG21184AB52 HTM, CustAcct = None, EventDate = 09/30/2020, KnowledgeDate = 2020/11/26:23:00:56, Error = price lookup returned error.  Denomination = USD, Lookup Date = 2020/09/30:23:59:59. "																
+22114	"TransType = Mark To Market, TranID = 1300, Portfolio = 20051, Investment = XS1376566714 HTM, CustAcct = None, EventDate = 09/30/2020, KnowledgeDate = 2020/11/26:23:00:56, Error = price lookup returned error.  Denomination = USD, Lookup Date = 2020/09/30:23:59:59. "																
+22114	"TransType = Mark To Market, TranID = 1300, Portfolio = 20051, Investment = XS1063561499 HTM, CustAcct = None, EventDate = 09/30/2020, KnowledgeDate = 2020/11/26:23:00:56, Error = price lookup returned error.  Denomination = USD, Lookup Date = 2020/09/30:23:59:59. "																
+22114	"TransType = Mark To Market, TranID = 1300, Portfolio = 20051, Investment = USG3709DAA03 HTM, CustAcct = None, EventDate = 09/30/2020, KnowledgeDate = 2020/11/26:23:00:56, Error = price lookup returned error.  Denomination = USD, Lookup Date = 2020/09/30:23:59:59. "																
+22114	"TransType = Mark To Market, TranID = 1300, Portfolio = 20051, Investment = XS0893206747 HTM, CustAcct = None, EventDate = 09/30/2020, KnowledgeDate = 2020/11/26:23:00:56, Error = price lookup returned error.  Denomination = USD, Lookup Date = 2020/09/30:23:59:59. "																
+22114	"TransType = Mark To Market, TranID = 1300, Portfolio = 20051, Investment = XS1039273666 HTM, CustAcct = None, EventDate = 09/30/2020, KnowledgeDate = 2020/11/26:23:00:56, Error = price lookup returned error.  Denomination = USD, Lookup Date = 2020/09/30:23:59:59. "																
+22114	"TransType = Mark To Market, TranID = 1300, Portfolio = 20051, Investment = XS1450332256 HTM, CustAcct = None, EventDate = 09/30/2020, KnowledgeDate = 2020/11/26:23:00:56, Error = price lookup returned error.  Denomination = USD, Lookup Date = 2020/09/30:23:59:59. "																
+22114	"TransType = Mark To Market, TranID = 1300, Portfolio = 20051, Investment = XS1125272143 HTM, CustAcct = None, EventDate = 09/30/2020, KnowledgeDate = 2020/11/26:23:00:56, Error = price lookup returned error.  Denomination = USD, Lookup Date = 2020/09/30:23:59:59. "																
+22114	"TransType = Mark To Market, TranID = 1300, Portfolio = 20051, Investment = XS1165659514 HTM, CustAcct = None, EventDate = 09/30/2020, KnowledgeDate = 2020/11/26:23:00:56, Error = price lookup returned error.  Denomination = USD, Lookup Date = 2020/09/30:23:59:59. "																
+22114	"TransType = Mark To Market, TranID = 1300, Portfolio = 20051, Investment = IB Fixed Deposit 0.51 06/10/2020, CustAcct = None, EventDate = 09/30/2020, KnowledgeDate = 2020/11/26:23:00:56, Error = price lookup returned error.  Denomination = HKD, Lookup Date = 2020/09/30:23:59:59. "																
+22114	"TransType = Mark To Market, TranID = 1300, Portfolio = 20051, Investment = MSB Fixed Deposit 0.6875 12/10/2020, CustAcct = None, EventDate = 09/30/2020, KnowledgeDate = 2020/11/26:23:00:56, Error = price lookup returned error.  Denomination = HKD, Lookup Date = 2020/09/30:23:59:59. "																
+22114	"TransType = Mark To Market, TranID = 1300, Portfolio = 20051, Investment = ABCHK Fixed Deposit 3 13/10/2020, CustAcct = None, EventDate = 09/30/2020, KnowledgeDate = 2020/11/26:23:00:56, Error = price lookup returned error.  Denomination = CNY, Lookup Date = 2020/09/30:23:59:59. "																
+22114	"TransType = Mark To Market, TranID = 1300, Portfolio = 20051, Investment = IB Fixed Deposit 2.7 14/10/2020, CustAcct = None, EventDate = 09/30/2020, KnowledgeDate = 2020/11/26:23:00:56, Error = price lookup returned error.  Denomination = CNY, Lookup Date = 2020/09/30:23:59:59. "																
+1090	Could not price investment (IB Fixed Deposit 0.51 06/10/2020) on date (2020/09/30) because there are no direct or indirect prices relating the investment and its denomination (HKD) and there are no direct or indirect prices relating the investment and the crossing currency (USD).																
+22115	MarketPrice function could not find price for IB Fixed Deposit 0.51 06/10/2020 denominated in HKD on date 2020/09/30:23:59:59 using knowledge date 2020/11/26:23:00:56.  Defaulting to 0.000000.																
+1090	Could not price investment (MSB Fixed Deposit 0.6875 12/10/2020) on date (2020/09/30) because there are no direct or indirect prices relating the investment and its denomination (HKD) and there are no direct or indirect prices relating the investment and the crossing currency (USD).																
+22115	MarketPrice function could not find price for MSB Fixed Deposit 0.6875 12/10/2020 denominated in HKD on date 2020/09/30:23:59:59 using knowledge date 2020/11/26:23:00:56.  Defaulting to 0.000000.																
+1090	Could not price investment (ABCHK Fixed Deposit 3 13/10/2020) on date (2020/09/30) because there are no direct or indirect prices relating the investment and its denomination (CNY) and there are no direct or indirect prices relating the investment and the crossing currency (USD).																
+22115	MarketPrice function could not find price for ABCHK Fixed Deposit 3 13/10/2020 denominated in CNY on date 2020/09/30:23:59:59 using knowledge date 2020/11/26:23:00:56.  Defaulting to 0.000000.																
+1090	Could not price investment (IB Fixed Deposit 2.7 14/10/2020) on date (2020/09/30) because there are no direct or indirect prices relating the investment and its denomination (CNY) and there are no direct or indirect prices relating the investment and the crossing currency (USD).																
+22115	MarketPrice function could not find price for IB Fixed Deposit 2.7 14/10/2020 denominated in CNY on date 2020/09/30:23:59:59 using knowledge date 2020/11/26:23:00:56.  Defaulting to 0.000000.																
