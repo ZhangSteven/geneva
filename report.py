@@ -43,8 +43,8 @@ readReport = compose(
 """
 	[String] file => [Iterable] lines
 
-	Read an Excel file, convert its first sheet into lines, each line is
-	a list of the columns in the row.
+	Read a Geneva report in Excel file. The report is generated as export
+	in 'Comma Delimited' format then saved as Excel (xlsx).
 """
 excelFileToLines = lambda file: \
 	worksheetToLines(open_workbook(file).sheet_by_index(0))
