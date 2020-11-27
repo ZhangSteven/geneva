@@ -210,7 +210,7 @@ updateDate = lambda s: \
 
 # [String] number string => [Float] number
 updateNumber = lambda s: \
-	'NA' if s == 'NA' else numberFromString(s)
+	s if s in ['', 'NA'] else numberFromString(s)
 
 
 # [String] percent string => [Float] number
@@ -291,4 +291,29 @@ readInvestmentTxtReport = partial(
 	    , 'Invest': numberFromPercentString
 	  	}
 	)
+)
+
+
+
+readProfitLossTxtReport = partial(
+	readTxtPositionWithUpdateFunction
+  , partial(
+	  	updateDictionaryWithFunction
+	  , { 'EndingQuantity': updateNumber
+	  	, 'BeginningLocalPrice': updateNumber
+	  	, 'Cost': updateNumber
+	  	, 'UnrealizedPrice': updateNumber
+	  	, 'UnrealizedFX': updateNumber
+	  	, 'UnrealizedCross': updateNumber
+	  	, 'Interest': updateNumber
+	  	, 'Dividend': updateNumber
+	  	, 'OtherIncome': updateNumber
+	  	, 'TotalPAndL': updateNumber
+	  	, 'EndingLocalPrice': updateNumber
+	  	, 'EndingMarketValue': updateNumber
+	  	, 'RealizedPrice': updateNumber
+	  	, 'RealizedFX': updateNumber
+	  	, 'RealizedCross': updateNumber
+	  	}
+  	)
 )

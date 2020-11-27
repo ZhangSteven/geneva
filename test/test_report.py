@@ -3,7 +3,8 @@
 
 import unittest2
 from geneva.report import getCurrentDirectory, readExcelReport, readTxtReport \
-						, readTaxlotTxtReport, readInvestmentTxtReport
+						, readTaxlotTxtReport, readInvestmentTxtReport \
+						, readProfitLossTxtReport
 from os.path import join
 
 
@@ -60,6 +61,17 @@ class TestReport(unittest2.TestCase):
 
 
 
+	def testReadProfitLossTxtReport(self):
+		inputFile = join(getCurrentDirectory(), 'samples', 'profit loss 2020-01.txt')
+		positions, metaData = readProfitLossTxtReport(inputFile, 'utf-16', '\t')
+		self.verifyMetaData3(metaData)
+
+		positions = list(positions)
+		self.assertEqual(133, len(positions))
+		self.verifyProfitLossPosition(positions[0])
+
+
+
 	def verifyMetaData(self, metaData):
 		self.assertEqual('20051', metaData['Portfolio'])
 		self.assertEqual('HKD', metaData['BookCurrency'])
@@ -73,6 +85,14 @@ class TestReport(unittest2.TestCase):
 		self.assertEqual('HKD', metaData['BookCurrency'])
 		self.assertEqual('ClosedPeriod', metaData['AccountingRunType'])
 		self.assertEqual('31-Mar-20', metaData['AccountingPeriod'])
+
+
+
+	def verifyMetaData3(self, metaData):
+		self.assertEqual('12XXXChinaLifeOverseasBondGroup', metaData['Portfolio'])
+		self.assertEqual('HKD', metaData['BookCurrency'])
+		self.assertEqual('ClosedPeriod', metaData['AccountingRunType'])
+		self.assertEqual('31-Jan-20', metaData['AccountingPeriod'])
 
 
 
@@ -108,3 +128,15 @@ class TestReport(unittest2.TestCase):
 		self.assertEqual('NA', position['LocalPrice'])
 		self.assertEqual(-2442286.66, position['BookUnrealizedGainOrLoss'])
 		self.assertEqual(0.001, position['Invest'])
+
+
+
+	def verifyProfitLossPosition(self, position):
+		self.assertEqual('Chinese Renminbi Yuan', position['Currency'])
+		self.assertEqual('Cash and Equivalents', position['PrintGroup'])
+		self.assertEqual(3335.34, position['EndingQuantity'])
+		self.assertEqual('', position['BeginningLocalPrice'])
+		self.assertEqual(0, position['UnrealizedPrice'])
+		self.assertEqual('Chinese Renminbi Yuan', position['Description'])
+		self.assertEqual(1, position['EndingLocalPrice'])
+		self.assertEqual(0, position['RealizedCross'])

@@ -13,3 +13,7 @@ CSV (Comma delimited) | Text (.csv) | likely utf-8, to be confirmed
 
 
 
+## To Do
+How to read a multipart file, e.g., investment all funds 2020-09-30.txt
+
+This file contains multiple portfolios.
