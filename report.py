@@ -182,22 +182,76 @@ def readTxtReport(file, encoding, delimiter):
 
 
 
-def getTxtMetadata(metadata):
-	"""
-	[Dictionary] raw metadata => [Dictionary] metadata
+# convert mm/dd/yyyy hh:mm date string to yyyy-mm-dd
+changeDateHourFormat = lambda s: \
+	datetime.strptime(s, '%m/%d/%Y %H:%M').strftime('%Y-%m-%d')
+
+
+# convert mm/dd/yyyy hh:mm date string to yyyy-mm-dd
+changeDateFormat = lambda s: \
+	datetime.strptime(s, '%m/%d/%Y').strftime('%Y-%m-%d')
+
+
+"""
+	[String] number string => [Float] n
+
+	The number string may look like: 
+	'100' or '"100.0"' or '"-100,000.00"'
+"""
+numberFromString = lambda s: \
+	float(s[1:-1].replace(',', '')) if len(s) > 2 and s[0] == '"' and s[-1] == '"' \
+	else float(s)
+
+
+# [String] date string => [String] date string
+updateDate = lambda s: \
+	'' if s == '' else changeDateFormat(s)
+
+
+# [String] number string => [Float] number
+updateNumber = lambda s: \
+	'NA' if s == 'NA' else numberFromString(s)
+
+
+
+"""
+	[Dictionary] raw metadata => [Dictionary] updated metadata
 
 	Convert certain values in the raw meta data to a better format.
-	"""
+"""
+getTxtMetadata = partial(
+	updateDictionaryWithFunction
+  , { 'PeriodEndDate': changeDateHourFormat
+	, 'PeriodStartDate': changeDateHourFormat
+	}
+)
 
-	# convert mm/dd/yyyy hh:mm date string to yyyy-mm-dd
-	changeDateFormat = lambda s: \
-		datetime.strptime(s, '%m/%d/%Y %H:%M').strftime('%Y-%m-%d')
+
+
+def readTaxlotTxtReport(file, encoding, delimiter):
+	"""
+	[String] file, [String] encoding, [String] delimiter
+		=> [Iterator] positions, [Dictionary] metadata
+	"""
+	updatePosition = partial(
+		updateDictionaryWithFunction
+	  , { 'TaxLotDate': updateDate
+		, 'Quantity': updateNumber
+		, 'OriginalFace': updateNumber
+		, 'UnitCost': updateNumber
+		, 'MarketPrice': updateNumber
+		, 'CostBook': updateNumber
+		, 'MarketValueBook': updateNumber
+		, 'UnrealizedPriceGainLossBook': updateNumber
+		, 'UnrealizedFXGainLossBook': updateNumber
+		, 'AccruedAmortBook': updateNumber
+		, 'AccruedInterestBook': updateNumber
+		}
+	)
 
 
 	return \
-	updateDictionaryWithFunction(
-		{ 'PeriodEndDate': changeDateFormat
-		, 'PeriodStartDate': changeDateFormat
-		}
-	  , metadata
-	)
+	compose(
+		lambda t: (map(updatePosition, t[0]), t[1])
+	  , readTxtReport
+	)(file, encoding, delimiter)
