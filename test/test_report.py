@@ -3,7 +3,7 @@
 
 import unittest2
 from geneva.report import getCurrentDirectory, readExcelReport, readTxtReport \
-						, readTaxlotTxtReport
+						, readTaxlotTxtReport, readInvestmentTxtReport
 from os.path import join
 
 
@@ -49,11 +49,30 @@ class TestReport(unittest2.TestCase):
 
 
 
+	def testReadInvestmentTxtReport(self):
+		inputFile = join(getCurrentDirectory(), 'samples', 'investment 2020-03.txt')
+		positions, metaData = readInvestmentTxtReport(inputFile, 'utf-16', '\t')
+		self.verifyMetaData2(metaData)
+
+		positions = list(positions)
+		self.assertEqual(174, len(positions))
+		self.verifyInvestmentPosition(positions[10])
+
+
+
 	def verifyMetaData(self, metaData):
 		self.assertEqual('20051', metaData['Portfolio'])
 		self.assertEqual('HKD', metaData['BookCurrency'])
 		self.assertEqual('2020-09-30', metaData['PeriodEndDate'])
 		self.assertEqual('1950-01-01', metaData['PeriodStartDate'])
+
+
+
+	def verifyMetaData2(self, metaData):
+		self.assertEqual('12XXXChinaLifeOverseasBondGroup', metaData['Portfolio'])
+		self.assertEqual('HKD', metaData['BookCurrency'])
+		self.assertEqual('ClosedPeriod', metaData['AccountingRunType'])
+		self.assertEqual('31-Mar-20', metaData['AccountingPeriod'])
 
 
 
@@ -79,3 +98,13 @@ class TestReport(unittest2.TestCase):
 		self.assertEqual(96.589, position['UnitCost'])
 		self.assertEqual('NA', position['MarketPrice'])
 		self.assertEqual(-9658.90, position['UnrealizedFXGainLossBook'])
+
+
+
+	def verifyInvestmentPosition(self, position):
+		self.assertEqual('United States Dollar', position['LocalCurrency'])
+		self.assertEqual('US035240AR13 HTM', position['InvestID'])
+		self.assertEqual(24000000, position['Quantity'])
+		self.assertEqual('NA', position['LocalPrice'])
+		self.assertEqual(-2442286.66, position['BookUnrealizedGainOrLoss'])
+		self.assertEqual(0.001, position['Invest'])

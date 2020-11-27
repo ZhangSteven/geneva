@@ -213,6 +213,11 @@ updateNumber = lambda s: \
 	'NA' if s == 'NA' else numberFromString(s)
 
 
+# [String] percent string => [Float] number
+numberFromPercentString = lambda s: \
+	float(s[:-1])/100
+
+
 
 """
 	[Dictionary] raw metadata => [Dictionary] updated metadata
@@ -228,12 +233,28 @@ getTxtMetadata = partial(
 
 
 
-def readTaxlotTxtReport(file, encoding, delimiter):
-	"""
+"""
+	[Function] position udpate function ([Dictionary] -> [Dictionary])
+	[String] file
+	[String] encoding
+	[String] delimiter
+		=> [Iterator] positions, [Dictionary] metadata
+"""
+readTxtPositionWithUpdateFunction = lambda updateFunc, file, encoding, delimiter: \
+	compose(
+		lambda t: (map(updateFunc, t[0]), t[1])
+	  , readTxtReport
+	)(file, encoding, delimiter)
+
+
+
+"""
 	[String] file, [String] encoding, [String] delimiter
 		=> [Iterator] positions, [Dictionary] metadata
-	"""
-	updatePosition = partial(
+"""
+readTaxlotTxtReport = partial(
+	readTxtPositionWithUpdateFunction
+  , partial(
 		updateDictionaryWithFunction
 	  , { 'TaxLotDate': updateDate
 		, 'Quantity': updateNumber
@@ -248,10 +269,26 @@ def readTaxlotTxtReport(file, encoding, delimiter):
 		, 'AccruedInterestBook': updateNumber
 		}
 	)
+)
 
 
-	return \
-	compose(
-		lambda t: (map(updatePosition, t[0]), t[1])
-	  , readTxtReport
-	)(file, encoding, delimiter)
+
+"""
+	[String] file, [String] encoding, [String] delimiter
+		=> [Iterator] positions, [Dictionary] metadata
+"""
+readInvestmentTxtReport = partial(
+	readTxtPositionWithUpdateFunction
+  , partial(
+		updateDictionaryWithFunction
+	  , { 'Quantity': updateNumber
+	    , 'LocalPrice': updateNumber
+	    , 'CostLocal': updateNumber
+	    , 'CostBook': updateNumber
+	    , 'BookUnrealizedGainOrLoss': updateNumber
+	    , 'AccruedInterest': updateNumber
+	    , 'MarketValueBook': updateNumber
+	    , 'Invest': numberFromPercentString
+	  	}
+	)
+)
