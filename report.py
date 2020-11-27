@@ -11,6 +11,7 @@ from utils.utility import fromExcelOrdinal
 from itertools import takewhile, groupby
 from functools import partial
 from os.path import abspath, dirname
+from datetime import datetime
 import codecs
 import logging
 logger = logging.getLogger(__name__)
@@ -118,28 +119,41 @@ getCurrentDirectory = lambda : \
 	dirname(abspath(__file__))
 
 
+# [Dictioanry] d1, [Dictioanry] d2 => [Dictionary] merged d
+mergeDict = lambda d1, d2: \
+	{**d1, **d2}
 
-def getExcelMetadata(metaData):
-	"""
+
+
+"""
+	[Dictionary] functionMap (key -> function), [Dictionary] d
+		=> [Dictionary] updated d (with keys in functionMap)
+
+	Create a copy of the input dictionary d, with certain key, value pairs
+	updated for those keys in the functionMap. 
+"""
+updateDictionaryWithFunction = lambda functionMap, d: \
+	mergeDict(d, {key: functionMap[key](d[key]) for key in functionMap})
+
+
+
+"""
 	[Dictonary] raw metadata => [Dictionary] metadata
+"""
+getExcelMetadata = lambda metadata: \
+	updateDictionaryWithFunction(
+		{ 'Portfolio': toStringIfFloat
+		, 'PeriodEndDate': toDateTimeString
+		, 'PeriodStartDate': toDateTimeString
+		}
+	  , metadata
+	)
+
+
+
+def readTxtReport(file, encoding, delimiter):
 	"""
-	updateFields = { 'Portfolio': toStringIfFloat
-				   , 'PeriodEndDate': toDateTimeString
-				   , 'PeriodStartDate': toDateTimeString
-				   }
-
-	d = metaData.copy()
-	for key in d:
-		if key in updateFields:
-			d[key] = updateFields[key](d[key])
-
-	return d
-
-
-
-def readTxtReport(file, encoding):
-	"""
-	[String] file => [Iterator] positions, [Dictionary] metaData
+	[String] file => [Iterator] positions, [Dictionary] meta data
 
 	Read a Geneva report in txt file. The report is generated as below:
 
@@ -149,23 +163,41 @@ def readTxtReport(file, encoding):
 
 	This function is to read "Text (tab delimited)" format.
 	"""
-
-	# read file to lines
-	# parse line to list of columns
-	# read report
-	# getTxtMetadata
-
 	def fileToLines(fn, encoding):
 		with codecs.open(fn, 'r', encoding=encoding) as file:
 			for line in file:
 				yield line
 
 
-	counter = 0
-	for line in fileToLines(file, encoding):
-		print(line.strip().split('\t'))
-		counter = counter + 1
-		if counter > 3:
-			break
+	stringToList = lambda delimiter, line: \
+		line.strip().split(delimiter)
 
-	return 0
+	
+	return compose(
+		lambda t: (t[0], getTxtMetadata(t[1]))
+	  , readReport
+	  , partial(map, partial(stringToList, delimiter))
+	  , fileToLines
+	)(file, encoding)
+
+
+
+def getTxtMetadata(metadata):
+	"""
+	[Dictionary] raw metadata => [Dictionary] metadata
+
+	Convert certain values in the raw meta data to a better format.
+	"""
+
+	# convert mm/dd/yyyy hh:mm date string to yyyy-mm-dd
+	changeDateFormat = lambda s: \
+		datetime.strptime(s, '%m/%d/%Y %H:%M').strftime('%Y-%m-%d')
+
+
+	return \
+	updateDictionaryWithFunction(
+		{ 'PeriodEndDate': changeDateFormat
+		, 'PeriodStartDate': changeDateFormat
+		}
+	  , metadata
+	)

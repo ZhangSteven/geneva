@@ -25,13 +25,15 @@ class TestReport(unittest2.TestCase):
 
 	def testReadTxtReport(self):
 		inputFile = join(getCurrentDirectory(), 'samples', 'taxlot01_text_tab.txt')
-		readTxtReport(inputFile, 'utf-8')
+		positions, metaData = readTxtReport(inputFile, 'utf-8', '\t')
+		self.verifyMetaData(metaData)
 		
 
 
 	def testReadTxtReport2(self):
 		inputFile = join(getCurrentDirectory(), 'samples', 'taxlot01_text_unicode.txt')
-		readTxtReport(inputFile, 'utf-16')
+		positions, metaData = readTxtReport(inputFile, 'utf-16', '\t')
+		self.verifyMetaData(metaData)
 
 
 
