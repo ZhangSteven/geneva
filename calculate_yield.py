@@ -49,7 +49,7 @@ getAccumulatedReturn = lambda allPositions, withCash: \
 	[Iterator] allPositions, investment positions sorted by month, like:
 		[positions of month1, positions of month2, ...]
 	[Bool] withCash
-	[Int] cutoffMonth
+	[Bool] withOffset
 	[Float] impairment
 	[Float] lastYearEndNav
 
@@ -61,8 +61,8 @@ getAverageNav = compose(
 	partial(map, lambda t: t[1]/t[0])
   , partial(filter, lambda t: t[0] > 1)
   , partial(zip, count(1))
-  , lambda allPositions, withCash, cutoffMonth, impairment, lastYearEndNav: \
-  		accumulate( map( partial(getNavFromPositions, withCash, cutoffMonth, impairment)
+  , lambda allPositions, withCash, withOffset, impairment, lastYearEndNav: \
+  		accumulate( map( partial(getNavFromPositions, withCash, withOffset, impairment)
 				  	   , allPositions)
 			  	  , lambda x, y: x + y
 			  	  , initial=lastYearEndNav)
@@ -72,9 +72,8 @@ getAverageNav = compose(
 
 def getReturnFromPositions(withCash, positions):
 	"""
-	[Bool] withCash, [List] positions => [Tuple] realized return, total return
-	
-	Where positions is List of profit loss positions.
+	[Bool] withCash, [List] positions (profit loss) 
+		=> [Tuple] realized return, total return
 	"""
 	realized = lambda p: \
 		p['Interest'] + p['Dividend'] + p['OtherIncome'] + \
@@ -117,8 +116,40 @@ def getReturnFromPositions(withCash, positions):
 
 
 
-def getNavFromPositions(withCash, cutoffMonth, impairment, positions):
-	return 60
+def getNavFromPositions(withCash, withOffset, impairment, positions):
+	"""
+	[Bool] withCash,
+	[Bool] withOffset (meaning whether CN Energy interest income has been
+		offset in this month)
+	[Float] impairment
+	[List] positions (investment positions)
+		=> [Float] Nav
+	"""
+	marketValue = lambda p: \
+		p['AccruedInterest'] + p['MarketValueBook']
+
+	accruedInterest = lambda p: \
+		p['AccruedInterest']
+
+	CNEnergyPosition = lambda p: \
+		p['SortKey'] == 'Corporate Bond' and 'CERCG ' in p['Description']
+
+	cashPosition = lambda p: \
+		p['LongShortDescription'] == 'Cash Long' and p['SortKey'] == 'Cash and Equivalents'
+
+
+	total = sum(map(marketValue, positions))
+
+
+	return \
+	total - impairment \
+	if withCash & withOffset else \
+	total - sum(map(accruedInterest, filter(CNEnergyPosition, positions))) - impairment \
+	if withCash & (not withOffset) else \
+	total - sum(map(marketValue, filter(cashPosition, positions))) - impairment \
+	if (not withCash) & withOffset else \
+	total - sum(map(marketValue, filter(cashPosition, positions))) \
+		- sum(map(accruedInterest, filter(CNEnergyPosition, positions))) - impairment
 
 
 
