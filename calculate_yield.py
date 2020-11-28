@@ -27,42 +27,44 @@ def getYieldFromFiles( investmentFiles, profitLossFiles, lastYearEndInvestmentFi
 
 
 
-def getAccumulatedReturnNav( allPositions, withCash, cutoffMonth, impairment
-						   , lastYearEndNav):
-	"""
+"""
+	[Iterator] allPositions, profit loss positions sorted by month, like:
+		[positions of month1, positions of month2, ...]
+	[Bool] withCash
+
+	=> [Iterator] ( accumulated realized return
+				  , accumulated total return
+				  )
+"""
+getAccumulatedReturn = lambda allPositions, withCash: \
+	accumulate( map( partial(getReturnFromPositions, withCash)
+				   , allPositions)
+			  , lambda t1, t2: (t1[0] + t2[0], t1[1] + t2[1]))
+
+
+
+"""
 	NOTE: requires Python version 3.8
 
-	[Iterator] allPositions ([positions of month1, positions of month2, ...])
+	[Iterator] allPositions, investment positions sorted by month, like:
+		[positions of month1, positions of month2, ...]
 	[Bool] withCash
 	[Int] cutoffMonth
 	[Float] impairment
 	[Float] lastYearEndNav
 
-	=> [Iterator] ( accumulated realized return
-				  , accumulated total return
-				  , average Nav
-				  )
-	"""
-	accumulatedReturns = \
-	accumulate( map(partial(getReturnFromPositions, withCash), allPositions)
-			  , lambda t1, t2: (t1[0] + t2[0], t1[1] + t2[1]))
-
-
-	accumulatedNavs = \
-	accumulate( map( partial(getNavFromPositions, withCash, cutoffMonth, impairment)
-				   , allPositions)
-			  , lambda x, y: x + y
-			  , initial=lastYearEndNav)
-
-
-	averageNavs = compose(
-		partial(map, lambda t: t[1]/t[0])
-	  , partial(filter, lambda t: t[0] > 1)
-	  , partial(zip, count(1))
-	)(accumulatedNavs)
-
-
-	return map(lambda t: (*t[0], t[1]), zip(accumulatedReturns, averageNavs))
+	=> [Iterator] average Nav per month
+"""
+getAverageNav = compose(
+	partial(map, lambda t: t[1]/t[0])
+  , partial(filter, lambda t: t[0] > 1)
+  , partial(zip, count(1))
+  , lambda allPositions, withCash, cutoffMonth, impairment, lastYearEndNav: \
+  		accumulate( map( partial(getNavFromPositions, withCash, cutoffMonth, impairment)
+				  	   , allPositions)
+			  	  , lambda x, y: x + y
+			  	  , initial=lastYearEndNav)
+)
 
 
 
@@ -125,5 +127,6 @@ if __name__ == '__main__':
 	# positions, metaData = readExcelReport(parser.parse_args().file)
 	# print(writeOutputCsv(getCsvFilename(metaData), count(positions)))
 
-	x = getAccumulatedReturnNav(range(5), True, 0, 0, 120)
-	showTupleList(x)
+	showTupleList(getAccumulatedReturn(range(5), True))
+	for x in getAverageNav(range(5), True, 0, 0, 120):
+		print(x)
