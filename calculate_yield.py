@@ -21,6 +21,21 @@ def getYieldFromFiles( investmentFiles, profitLossFiles, lastYearEndInvestmentFi
 	3. get return and nav data;
 	4. calculate return rate;
 	5. output csv.
+
+	we may need two last year end NAV: one with cash and one without;
+
+	sortedPLdata = sort by month: map(getProfitLossReport, files)
+	sortedInvdata = sort by month: map(getNavReport, files)
+
+	verifyMetaData(sortedPLdata, sortedInvdata)
+
+	sortedPLPositions = map(func, sortedPLdata)
+	sortedInvPositionsWithCutoff = map(func(cutoffMonth), sortedInvdata)
+
+	returnDataWithCash = getAccumulatedReturn(sortedPLPositions, withCash)
+
+	navDataWithCash = getAverageNav(sortedInvPositionsWithCutoff, withCash
+									, impairment, lastYearEndNavWithCash)
 	"""
 
 	return 0
@@ -47,9 +62,11 @@ getAccumulatedReturn = lambda allPositions, withCash: \
 	Requires Python version 3.8 or above
 
 	[Iterator] allPositions, investment positions sorted by month, like:
-		[positions of month1, positions of month2, ...]
+		[ (positions of month1, withCutoff)
+		, (positions of month2, withCutoff)
+		...
+		]
 	[Bool] withCash
-	[Bool] withOffset
 	[Float] impairment
 	[Float] lastYearEndNav
 
@@ -61,8 +78,8 @@ getAverageNav = compose(
 	partial(map, lambda t: t[1]/t[0])
   , partial(filter, lambda t: t[0] > 1)
   , partial(zip, count(1))
-  , lambda allPositions, withCash, withOffset, impairment, lastYearEndNav: \
-  		accumulate( map( partial(getNavFromPositions, withCash, withOffset, impairment)
+  , lambda allPositions, withCash, impairment, lastYearEndNav: \
+  		accumulate( map( lambda t: getNavFromPositions(withCash, t[1], impairment, t[0])
 				  	   , allPositions)
 			  	  , lambda x, y: x + y
 			  	  , initial=lastYearEndNav)
