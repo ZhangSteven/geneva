@@ -44,7 +44,7 @@ getAccumulatedReturn = lambda allPositions, withCash: \
 
 
 """
-	NOTE: requires Python version 3.8
+	Requires Python version 3.8 or above
 
 	[Iterator] allPositions, investment positions sorted by month, like:
 		[positions of month1, positions of month2, ...]
@@ -54,6 +54,8 @@ getAccumulatedReturn = lambda allPositions, withCash: \
 	[Float] lastYearEndNav
 
 	=> [Iterator] average Nav per month
+
+	NOTE: the lastYearEndNav must be consistent with the withCash switch.
 """
 getAverageNav = compose(
 	partial(map, lambda t: t[1]/t[0])
@@ -68,12 +70,54 @@ getAverageNav = compose(
 
 
 
-def getReturnFromPositions(withCash, posiitons):
-	return (1, 2)
+def getReturnFromPositions(withCash, positions):
+	"""
+	[Bool] withCash, [List] positions => [Tuple] realized return, total return
+	
+	Where positions is List of profit loss positions.
+	"""
+	realized = lambda p: \
+		p['Interest'] + p['Dividend'] + p['OtherIncome'] + \
+		p['RealizedPrice'] + p['RealizedFX'] + p['RealizedCross']
+
+	unrealized = lambda p: \
+		p['UnrealizedPrice'] + p['UnrealizedFX'] + p['UnrealizedCross']
+
+	total = lambda p: \
+		realized(p) + unrealized(p)
+
+	intDvd = lambda p: \
+		p['Interest'] + p['Dividend'] + p['OtherIncome']
+
+	cashPosition = lambda p: \
+		p['PrintGroup'] == 'Cash and Equivalents'
+
+	CNEnergyPosition = lambda p: \
+		p['PrintGroup'] == 'Corporate Bond' and 'CERCG ' in p['Description']
+
+
+	realizedReturn = sum(map(realized, positions))
+	totalReturn = sum(map(total, positions))
+
+
+	return \
+	( realizedReturn - sum(map(intDvd, filter(cashPosition, positions))) \
+		- sum(map(intDvd, filter(CNEnergyPosition, positions)))
+	, totalReturn - sum(map(intDvd, filter(cashPosition, positions))) \
+		- sum(map(intDvd, filter(CNEnergyPosition, positions))) \
+		- sum(map(unrealized, filter(CNEnergyPosition, positions)))
+	) \
+	if withCash else \
+	( realizedReturn - sum(map(realized, filter(cashPosition, positions))) \
+		- sum(map(intDvd, filter(CNEnergyPosition, positions)))
+	, totalReturn - sum(map(total, filter(cashPosition, positions))) \
+		- sum(map(intDvd, filter(CNEnergyPosition, positions))) \
+		- sum(map(unrealized, filter(CNEnergyPosition, positions)))
+	)
 
 
 
-def getNavFromPositions(withCash, cutoffMonth, impairment, posiitons):
+def getNavFromPositions(withCash, cutoffMonth, impairment, positions):
 	return 60
 
 
