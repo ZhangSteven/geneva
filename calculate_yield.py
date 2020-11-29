@@ -37,14 +37,17 @@ def getYieldFromFiles( investmentFiles, profitLossFiles
 		list(map( lambda t: (list(t[0]), getMetadataMonth(t[1]) <= cutoffMonth)
 				, sortedInvdata))
 
-	combine = lambda m1, m2: \
-		map(lambda t: (*t[0], t[1]), zip(m1, m2))
+	combine = lambda m1, m2, m3, m4: \
+		map(lambda t: (*t[0], t[1], *t[2], t[3]), zip(m1, m2, m3, m4))
 
-	return combine( getAccumulatedReturn(sortedPLPositions, True)
-				  , getAverageNav( sortedInvPositionsWithCutoff
-				  				 , True, impairment, lastYearEndNavWithCash)
-				  )
-
+	return \
+	combine( getAccumulatedReturn(sortedPLPositions, True)
+		   , getAverageNav( sortedInvPositionsWithCutoff
+				  		  , True, impairment, lastYearEndNavWithCash)
+		   , getAccumulatedReturn(sortedPLPositions, False)
+		   , getAverageNav( sortedInvPositionsWithCutoff
+				  		  , False, impairment, lastYearEndNavWithoutCash)
+		   )
 
 
 
@@ -136,16 +139,32 @@ getAccumulatedReturn = lambda allPositions, withCash: \
 
 	NOTE: the lastYearEndNav must be consistent with the withCash switch.
 """
-getAverageNav = compose(
+getAverageNav = lambda allPositions, withCash, impairment, lastYearEndNav : \
+compose(
 	partial(map, lambda t: t[1]/t[0])
   , partial(filter, lambda t: t[0] > 1)
   , partial(zip, count(1))
-  , lambda allPositions, withCash, impairment, lastYearEndNav: \
-  		accumulate( map( lambda t: getNavFromPositions(withCash, t[1], impairment, t[0])
-				  	   , allPositions)
-			  	  , lambda x, y: x + y
-			  	  , initial=lastYearEndNav)
-)
+  , lambda navs: accumulate(navs, initial=lastYearEndNav)
+  , lambda allPositions, withCash, impairment: \
+		map( lambda t: getNavFromPositions(withCash, t[1], impairment, t[0])
+		   , allPositions)
+
+)(allPositions, withCash, impairment)
+
+
+
+# This doesn't work: running the second time gives wierd results, why?
+# 
+# getAverageNav = compose(
+# 	partial(map, lambda t: t[1]/t[0])
+#   , partial(filter, lambda t: t[0] > 1)
+#   , partial(zip, count(1))
+#   , lambda allPositions, withCash, impairment, lastYearEndNav: \
+#   		accumulate( map( lambda t: getNavFromPositions(withCash, t[1], impairment, t[0])
+# 				  	   , allPositions)
+# 			  	  , lambda x, y: x + y
+# 			  	  , initial=lastYearEndNav)
+# )
 
 
 
@@ -232,14 +251,6 @@ def getNavFromPositions(withCash, withOffset, impairment, positions):
 
 
 
-def showTupleList(L):
-	for t in L:
-		for x in t:
-			print(x, end=' ')
-
-		print('')
-
-
 
 # getCsvFilename = lambda metaData: \
 # 	'investment types ' + metaData['Portfolio'] + ' ' + metaData['PeriodEndDate'] + '.csv'
@@ -301,7 +312,9 @@ if __name__ == '__main__':
 					  , join('samples', 'profit loss 2020-09.txt')
 					  , join('samples', 'profit loss 2020-10.txt')]
 
-	for x in getYieldFromFiles( investmentFiles, profitLossFiles
-							  , 177801674041.66, 177800934590.20
-							  , 3212689500.00, 7):
+	for x in getYieldFromFiles( investmentFiles
+											 , profitLossFiles
+							  				 , 177801674041.66
+							  				 , 177800934590.20
+							  				 , 3212689500.00, 7):
 		print(x)
