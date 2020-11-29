@@ -19,28 +19,8 @@ def getYieldFromFiles( investmentFiles, profitLossFiles
 					 , lastYearEndNavWithCash, lastYearEndNavWithoutCash
 					 , impairment, cutoffMonth):
 	"""
-	1. get metadata and positions;
-	2. check metadata;
-	3. get return and nav data;
-	4. calculate return rate;
-	5. output csv.
 
-	we may need two last year end NAV: one with cash and one without;
-
-	sortedPLdata = sort by month: map(getProfitLossReport, files)
-	sortedInvdata = sort by month: map(getNavReport, files)
-
-	verifyMetaData(sortedPLdata, sortedInvdata)
-
-	sortedPLPositions = map(func, sortedPLdata)
-	sortedInvPositionsWithCutoff = map(func(cutoffMonth), sortedInvdata)
-
-	returnDataWithCash = getAccumulatedReturn(sortedPLPositions, withCash)
-
-	navDataWithCash = getAverageNav(sortedInvPositionsWithCutoff, withCash
-									, impairment, lastYearEndNavWithCash)
 	"""
-
 	sortedPLdata = sorted( map( partial(readProfitLossTxtReport, 'utf-16', '\t')
 							  , profitLossFiles)
 						 , key=lambda t: t[1]['PeriodEndDate'])
@@ -52,8 +32,25 @@ def getYieldFromFiles( investmentFiles, profitLossFiles
 	checkMetaData( list(map(lambda t: t[1], sortedPLdata))
 				 , list(map(lambda t: t[1], sortedInvdata)))
 
+	sortedPLPositions = list(map(lambda t: list(t[0]), sortedPLdata))
+	sortedInvPositionsWithCutoff = \
+		list(map( lambda t: (list(t[0]), getMetadataMonth(t[1]) <= cutoffMonth)
+				, sortedInvdata))
 
-	return 0
+	combine = lambda m1, m2: \
+		map(lambda t: (*t[0], t[1]), zip(m1, m2))
+
+	return combine( getAccumulatedReturn(sortedPLPositions, True)
+				  , getAverageNav( sortedInvPositionsWithCutoff
+				  				 , True, impairment, lastYearEndNavWithCash)
+				  )
+
+
+
+
+# [Dictionary] metadata => [Int] month of the period end date
+getMetadataMonth = lambda m: \
+	int(m['PeriodEndDate'].split('-')[1])
 
 
 
@@ -92,7 +89,7 @@ def checkMetaData(plMetadata, invMetadata):
 	# if there are N metadata in plMetadata, then their month forms a 
 	# set {1..N}
 	monthCollection = lambda metadataList: \
-		set(map(lambda m: int(m['PeriodEndDate'].split('-')[1]), metadataList))
+		set(map(getMetadataMonth, metadataList))
 
 
 	if not allEquals([ monthCollection(plMetadata)
@@ -281,14 +278,30 @@ if __name__ == '__main__':
 		$python count_investment.py samples/investment01.xlsx
 
 	"""
-	# positions, metaData = readExcelReport(parser.parse_args().file)
-	# print(writeOutputCsv(getCsvFilename(metaData), count(positions)))
-
 	investmentFiles = [ join('samples', 'investment positions 2020-01.txt')
 					  , join('samples', 'investment positions 2020-02.txt')
+					  , join('samples', 'investment positions 2020-03.txt')
+					  , join('samples', 'investment positions 2020-04.txt')
+					  , join('samples', 'investment positions 2020-05.txt')
+					  , join('samples', 'investment positions 2020-06.txt')
+					  , join('samples', 'investment positions 2020-07.txt')
+					  , join('samples', 'investment positions 2020-08.txt')
+					  , join('samples', 'investment positions 2020-09.txt')
+					  , join('samples', 'investment positions 2020-10.txt')
 					  ]
 
 	profitLossFiles = [ join('samples', 'profit loss 2020-01.txt')
-					  , join('samples', 'profit loss 2020-02.txt')]
+					  , join('samples', 'profit loss 2020-02.txt')
+					  , join('samples', 'profit loss 2020-03.txt')
+					  , join('samples', 'profit loss 2020-04.txt')
+					  , join('samples', 'profit loss 2020-05.txt')
+					  , join('samples', 'profit loss 2020-06.txt')
+					  , join('samples', 'profit loss 2020-07.txt')
+					  , join('samples', 'profit loss 2020-08.txt')
+					  , join('samples', 'profit loss 2020-09.txt')
+					  , join('samples', 'profit loss 2020-10.txt')]
 
-	getYieldFromFiles(investmentFiles, profitLossFiles, 0, 0, 0, 7)
+	for x in getYieldFromFiles( investmentFiles, profitLossFiles
+							  , 177801674041.66, 177800934590.20
+							  , 3212689500.00, 7):
+		print(x)
