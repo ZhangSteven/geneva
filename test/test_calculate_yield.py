@@ -4,7 +4,8 @@
 import unittest2
 from geneva.report import readProfitLossTxtReport, getCurrentDirectory \
 						, readInvestmentTxtReport
-from geneva.calculate_yield import getReturnFromPositions, getNavFromPositions
+from geneva.calculate_yield import getReturnFromPositions, getNavFromPositions \
+						, getResultFromFiles
 from toolz.functoolz import compose
 from functools import partial
 from os.path import join
@@ -92,3 +93,173 @@ class TestCalculateYield(unittest2.TestCase):
 		self.assertAlmostEqual( 195050730381.42
 							  , getNavFromPositions(False, True, getImpairment(), positions)
 							  , 2)
+
+
+
+	def testGetResultFromFiles(self):
+		# Sequence of the files does not matter
+		investmentFiles = [ join(getCurrentDirectory(), 'samples', 'investment positions 2020-06.txt')
+						  , join(getCurrentDirectory(), 'samples', 'investment positions 2020-07.txt')
+						  , join(getCurrentDirectory(), 'samples', 'investment positions 2020-08.txt')
+						  , join(getCurrentDirectory(), 'samples', 'investment positions 2020-09.txt')
+						  , join(getCurrentDirectory(), 'samples', 'investment positions 2020-10.txt')
+						  , join(getCurrentDirectory(), 'samples', 'investment positions 2020-01.txt')
+						  , join(getCurrentDirectory(), 'samples', 'investment positions 2020-02.txt')
+						  , join(getCurrentDirectory(), 'samples', 'investment positions 2020-03.txt')
+						  , join(getCurrentDirectory(), 'samples', 'investment positions 2020-04.txt')
+						  , join(getCurrentDirectory(), 'samples', 'investment positions 2020-05.txt')
+						  ]
+
+		profitLossFiles = [ join(getCurrentDirectory(), 'samples', 'profit loss 2020-06.txt')
+						  , join(getCurrentDirectory(), 'samples', 'profit loss 2020-07.txt')
+						  , join(getCurrentDirectory(), 'samples', 'profit loss 2020-08.txt')
+						  , join(getCurrentDirectory(), 'samples', 'profit loss 2020-09.txt')
+						  , join(getCurrentDirectory(), 'samples', 'profit loss 2020-10.txt')
+						  , join(getCurrentDirectory(), 'samples', 'profit loss 2020-01.txt')
+						  , join(getCurrentDirectory(), 'samples', 'profit loss 2020-02.txt')
+						  , join(getCurrentDirectory(), 'samples', 'profit loss 2020-03.txt')
+						  , join(getCurrentDirectory(), 'samples', 'profit loss 2020-04.txt')
+						  , join(getCurrentDirectory(), 'samples', 'profit loss 2020-05.txt')
+						  ]
+
+		withCash, withoutCash = (lambda t: (list(t[0]), list(t[1])))(
+			getResultFromFiles( investmentFiles
+							  , profitLossFiles
+							  , 177801674041.66
+							  , 177800934590.20
+							  , 3212689500.00, 7)
+		)
+
+		self.assertAlmostEqual(794354025.64, withCash[0][0], 2)
+		self.assertAlmostEqual(467300058.59, withCash[0][2], 2)
+		self.assertAlmostEqual(178862489321.83, withCash[0][4], 2)
+		self.assertAlmostEqual(795081909.54, withoutCash[0][0], 2)
+		self.assertAlmostEqual(468008054.89, withoutCash[0][2], 2)
+		self.assertAlmostEqual(178202412228.44, withoutCash[0][4], 2)
+
+		self.assertAlmostEqual(8836311220.42, withCash[9][0], 2)
+		self.assertAlmostEqual(8228027711.85, withCash[9][2], 2)
+		self.assertAlmostEqual(191878687075.53, withCash[9][4], 2)
+		self.assertAlmostEqual(8833423074.48, withoutCash[9][0], 2)
+		self.assertAlmostEqual(8223793885.14, withoutCash[9][2], 2)
+		self.assertAlmostEqual(189813739094.29, withoutCash[9][4], 2)
+
+
+
+	def testResultFromFilesError1(self):
+		investmentFiles = [ join(getCurrentDirectory(), 'samples', 'investment positions 2020-06.txt')
+						  , join(getCurrentDirectory(), 'samples', 'investment positions 2020-07.txt')
+						  ]
+
+		profitLossFiles = [ join(getCurrentDirectory(), 'samples', 'profit loss 2020-06.txt')
+						  ]
+
+		try:
+			getResultFromFiles( investmentFiles
+							  , profitLossFiles
+							  , 177801674041.66
+							  , 177800934590.20
+							  , 3212689500.00, 7)
+		except ValueError:
+			# expected: inconsistent number of files
+			pass
+
+		else:
+			self.fail('error should occur')
+
+
+
+	def testResultFromFilesError2(self):
+		investmentFiles = [ join(getCurrentDirectory(), 'samples', 'investment positions 2020-01.txt')
+						  , join(getCurrentDirectory(), 'samples', 'investment positions 2020-02.txt')
+						  ]
+
+		profitLossFiles = [ join(getCurrentDirectory(), 'samples', 'profit loss 2020-01.txt')
+						  , join(getCurrentDirectory(), 'samples', 'profit loss 2020-03.txt')
+						  ]
+
+		try:
+			getResultFromFiles( investmentFiles
+							  , profitLossFiles
+							  , 177801674041.66
+							  , 177800934590.20
+							  , 3212689500.00, 7)
+		except ValueError:
+			# expected: profit loss files: Jan and Mar
+			pass
+
+		else:
+			self.fail('error should occur')
+
+
+
+	def testResultFromFilesError3(self):
+		investmentFiles = [ join(getCurrentDirectory(), 'samples', 'investment positions base USD 2020-01.txt')
+						  , join(getCurrentDirectory(), 'samples', 'investment positions 2020-02.txt')
+						  ]
+
+		profitLossFiles = [ join(getCurrentDirectory(), 'samples', 'profit loss 2020-01.txt')
+						  , join(getCurrentDirectory(), 'samples', 'profit loss 2020-02.txt')
+						  ]
+
+		try:
+			getResultFromFiles( investmentFiles
+							  , profitLossFiles
+							  , 177801674041.66
+							  , 177800934590.20
+							  , 3212689500.00, 7)
+		except ValueError:
+			# expected: one investment file has base USD, inconsistent
+			# with others
+			pass
+
+		else:
+			self.fail('error should occur')
+
+
+
+	def testResultFromFilesError4(self):
+		investmentFiles = [ join(getCurrentDirectory(), 'samples', 'investment positions no close 2020-01.txt')
+						  , join(getCurrentDirectory(), 'samples', 'investment positions 2020-02.txt')
+						  ]
+
+		profitLossFiles = [ join(getCurrentDirectory(), 'samples', 'profit loss 2020-01.txt')
+						  , join(getCurrentDirectory(), 'samples', 'profit loss 2020-02.txt')
+						  ]
+
+		try:
+			getResultFromFiles( investmentFiles
+							  , profitLossFiles
+							  , 177801674041.66
+							  , 177800934590.20
+							  , 3212689500.00, 7)
+		except ValueError:
+			# expected: one investment file is no close period
+			pass
+
+		else:
+			self.fail('error should occur')
+
+
+
+	def testResultFromFilesError5(self):
+		investmentFiles = [ join(getCurrentDirectory(), 'samples', '12229 investment positions 2020-01.txt')
+						  , join(getCurrentDirectory(), 'samples', 'investment positions 2020-02.txt')
+						  ]
+
+		profitLossFiles = [ join(getCurrentDirectory(), 'samples', 'profit loss 2020-01.txt')
+						  , join(getCurrentDirectory(), 'samples', 'profit loss 2020-02.txt')
+						  ]
+
+		try:
+			getResultFromFiles( investmentFiles
+							  , profitLossFiles
+							  , 177801674041.66
+							  , 177800934590.20
+							  , 3212689500.00, 7)
+		except ValueError:
+			# expected: one investment file has a different portfolio
+			pass
+
+		else:
+			self.fail('error should occur')
