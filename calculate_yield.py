@@ -15,9 +15,9 @@ logger = logging.getLogger(__name__)
 
 
 
-def getYieldFromFiles( investmentFiles, profitLossFiles
-					 , lastYearEndNavWithCash, lastYearEndNavWithoutCash
-					 , impairment, cutoffMonth):
+def getResultFromFiles( investmentFiles, profitLossFiles
+					  , lastYearEndNavWithCash, lastYearEndNavWithoutCash
+					  , impairment, cutoffMonth):
 	"""
 
 	"""
@@ -32,22 +32,37 @@ def getYieldFromFiles( investmentFiles, profitLossFiles
 	checkMetaData( list(map(lambda t: t[1], sortedPLdata))
 				 , list(map(lambda t: t[1], sortedInvdata)))
 
-	sortedPLPositions = list(map(lambda t: list(t[0]), sortedPLdata))
-	sortedInvPositionsWithCutoff = \
-		list(map( lambda t: (list(t[0]), getMetadataMonth(t[1]) <= cutoffMonth)
-				, sortedInvdata))
+	return \
+	getResultFromPositions( list(map(lambda t: list(t[0]), sortedPLdata))
+						  , list(map( lambda t: (list(t[0]), getMetadataMonth(t[1]) <= cutoffMonth)
+									, sortedInvdata))
+						  , lastYearEndNavWithCash
+						  , lastYearEndNavWithoutCash
+						  , impairment)
 
-	combine = lambda m1, m2, m3, m4: \
-		map(lambda t: (*t[0], t[1], *t[2], t[3]), zip(m1, m2, m3, m4))
+
+
+def getResultFromPositions( sortedPLPositions, sortedInvPositionsWithCutoff
+						  , lastYearEndNavWithCash, lastYearEndNavWithoutCash
+						  , impairment):
+
+	combine = compose(
+		partial(map, lambda t: (t[0], t[0]/t[2]*100, t[1], t[1]/t[2]*100, t[2]))
+	  , lambda m1, m2: \
+			map(lambda t: (*t[0], t[1]), zip(m1, m2))
+	)
 
 	return \
-	combine( getAccumulatedReturn(sortedPLPositions, True)
-		   , getAverageNav( sortedInvPositionsWithCutoff
-				  		  , True, impairment, lastYearEndNavWithCash)
-		   , getAccumulatedReturn(sortedPLPositions, False)
-		   , getAverageNav( sortedInvPositionsWithCutoff
-				  		  , False, impairment, lastYearEndNavWithoutCash)
-		   )
+	( combine( getAccumulatedReturn(sortedPLPositions, True)
+		   	 , getAverageNav( sortedInvPositionsWithCutoff
+				  		    , True, impairment, lastYearEndNavWithCash)
+		     )
+
+	, combine( getAccumulatedReturn(sortedPLPositions, False)
+		     , getAverageNav( sortedInvPositionsWithCutoff
+				  		    , False, impairment, lastYearEndNavWithoutCash)
+		     )
+	)
 
 
 
@@ -289,32 +304,42 @@ if __name__ == '__main__':
 		$python count_investment.py samples/investment01.xlsx
 
 	"""
-	investmentFiles = [ join('samples', 'investment positions 2020-01.txt')
-					  , join('samples', 'investment positions 2020-02.txt')
-					  , join('samples', 'investment positions 2020-03.txt')
-					  , join('samples', 'investment positions 2020-04.txt')
-					  , join('samples', 'investment positions 2020-05.txt')
-					  , join('samples', 'investment positions 2020-06.txt')
+
+	# Sequence of the files does not matter
+	investmentFiles = [ join('samples', 'investment positions 2020-06.txt')
 					  , join('samples', 'investment positions 2020-07.txt')
 					  , join('samples', 'investment positions 2020-08.txt')
 					  , join('samples', 'investment positions 2020-09.txt')
 					  , join('samples', 'investment positions 2020-10.txt')
+					  , join('samples', 'investment positions 2020-01.txt')
+					  , join('samples', 'investment positions 2020-02.txt')
+					  , join('samples', 'investment positions 2020-03.txt')
+					  , join('samples', 'investment positions 2020-04.txt')
+					  , join('samples', 'investment positions 2020-05.txt')
 					  ]
 
-	profitLossFiles = [ join('samples', 'profit loss 2020-01.txt')
+	profitLossFiles = [ join('samples', 'profit loss 2020-06.txt')
+					  , join('samples', 'profit loss 2020-07.txt')
+					  , join('samples', 'profit loss 2020-08.txt')
+					  , join('samples', 'profit loss 2020-09.txt')
+					  , join('samples', 'profit loss 2020-10.txt')
+					  , join('samples', 'profit loss 2020-01.txt')
 					  , join('samples', 'profit loss 2020-02.txt')
 					  , join('samples', 'profit loss 2020-03.txt')
 					  , join('samples', 'profit loss 2020-04.txt')
 					  , join('samples', 'profit loss 2020-05.txt')
-					  , join('samples', 'profit loss 2020-06.txt')
-					  , join('samples', 'profit loss 2020-07.txt')
-					  , join('samples', 'profit loss 2020-08.txt')
-					  , join('samples', 'profit loss 2020-09.txt')
-					  , join('samples', 'profit loss 2020-10.txt')]
+					  ]
 
-	for x in getYieldFromFiles( investmentFiles
-											 , profitLossFiles
-							  				 , 177801674041.66
-							  				 , 177800934590.20
-							  				 , 3212689500.00, 7):
+	
+	withCash, withoutCash = getResultFromFiles( investmentFiles
+							  				  , profitLossFiles
+							  				  , 177801674041.66
+							  				  , 177800934590.20
+							  				  , 3212689500.00, 7)
+	
+	for x in withCash:
+		print(x)
+
+	print()
+	for x in withoutCash:
 		print(x)
