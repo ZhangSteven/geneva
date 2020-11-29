@@ -26,21 +26,21 @@ class TestReport(unittest2.TestCase):
 
 	def testReadTxtReport(self):
 		inputFile = join(getCurrentDirectory(), 'samples', 'taxlot01_text_tab.txt')
-		positions, metaData = readTxtReport(inputFile, 'utf-8', '\t')
+		positions, metaData = readTxtReport('utf-8', '\t', inputFile)
 		self.verifyMetaData(metaData)
 		
 
 
 	def testReadTxtReport2(self):
 		inputFile = join(getCurrentDirectory(), 'samples', 'taxlot01_text_unicode.txt')
-		positions, metaData = readTxtReport(inputFile, 'utf-16', '\t')
+		positions, metaData = readTxtReport('utf-16', '\t', inputFile)
 		self.verifyMetaData(metaData)
 
 
 
 	def testReadTaxlotTxtReport(self):
 		inputFile = join(getCurrentDirectory(), 'samples', 'taxlot01_text_unicode.txt')
-		positions, metaData = readTaxlotTxtReport(inputFile, 'utf-16', '\t')
+		positions, metaData = readTaxlotTxtReport('utf-16', '\t', inputFile)
 		self.verifyMetaData(metaData)
 
 		positions = list(positions)
@@ -52,7 +52,7 @@ class TestReport(unittest2.TestCase):
 
 	def testReadInvestmentTxtReport(self):
 		inputFile = join(getCurrentDirectory(), 'samples', 'investment 2020-03.txt')
-		positions, metaData = readInvestmentTxtReport(inputFile, 'utf-16', '\t')
+		positions, metaData = readInvestmentTxtReport('utf-16', '\t', inputFile)
 		self.verifyMetaData2(metaData)
 
 		positions = list(positions)
@@ -63,7 +63,7 @@ class TestReport(unittest2.TestCase):
 
 	def testReadProfitLossTxtReport(self):
 		inputFile = join(getCurrentDirectory(), 'samples', 'profit loss 2020-01.txt')
-		positions, metaData = readProfitLossTxtReport(inputFile, 'utf-16', '\t')
+		positions, metaData = readProfitLossTxtReport('utf-16', '\t', inputFile)
 		self.verifyMetaData3(metaData)
 
 		positions = list(positions)

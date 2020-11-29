@@ -26,7 +26,7 @@ class TestCalculateYield(unittest2.TestCase):
 
 		positions = compose(
 			lambda t: list(t[0])
-		  , lambda file: readProfitLossTxtReport(file, 'utf-16', '\t')
+		  , lambda file: readProfitLossTxtReport('utf-16', '\t', file)
 		)(inputFile)
 
 		realized, total = getReturnFromPositions(True, positions)
@@ -44,7 +44,7 @@ class TestCalculateYield(unittest2.TestCase):
 
 		positions = compose(
 			lambda t: list(t[0])
-		  , lambda file: readProfitLossTxtReport(file, 'utf-16', '\t')
+		  , lambda file: readProfitLossTxtReport('utf-16', '\t', file)
 		)(inputFile)
 
 		realized, total = getReturnFromPositions(True, positions)
@@ -62,7 +62,7 @@ class TestCalculateYield(unittest2.TestCase):
 
 		positions = compose(
 			lambda t: list(t[0])
-		  , lambda file: readInvestmentTxtReport(file, 'utf-16', '\t')
+		  , lambda file: readInvestmentTxtReport('utf-16', '\t', file)
 		)(inputFile)
 
 		self.assertAlmostEqual( 201234832347.59
@@ -81,7 +81,7 @@ class TestCalculateYield(unittest2.TestCase):
 
 		positions = compose(
 			lambda t: list(t[0])
-		  , lambda file: readInvestmentTxtReport(file, 'utf-16', '\t')
+		  , lambda file: readInvestmentTxtReport('utf-16', '\t', file)
 		)(inputFile)
 
 		self.assertAlmostEqual( 198014238644.38

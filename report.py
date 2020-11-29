@@ -151,7 +151,7 @@ getExcelMetadata = lambda metadata: \
 
 
 
-def readTxtReport(file, encoding, delimiter):
+def readTxtReport(encoding, delimiter, file):
 	"""
 	[String] file => [Iterator] positions, [Dictionary] meta data
 
@@ -235,21 +235,21 @@ getTxtMetadata = partial(
 
 """
 	[Function] position udpate function ([Dictionary] -> [Dictionary])
-	[String] file
 	[String] encoding
 	[String] delimiter
+	[String] file
 		=> [Iterator] positions, [Dictionary] metadata
 """
-readTxtPositionWithUpdateFunction = lambda updateFunc, file, encoding, delimiter: \
+readTxtPositionWithUpdateFunction = lambda updateFunc, encoding, delimiter, file: \
 	compose(
 		lambda t: (map(updateFunc, t[0]), t[1])
 	  , readTxtReport
-	)(file, encoding, delimiter)
+	)(encoding, delimiter, file)
 
 
 
 """
-	[String] file, [String] encoding, [String] delimiter
+	[String] encoding, [String] delimiter, [String] file
 		=> [Iterator] positions, [Dictionary] metadata
 """
 readTaxlotTxtReport = partial(
@@ -274,7 +274,7 @@ readTaxlotTxtReport = partial(
 
 
 """
-	[String] file, [String] encoding, [String] delimiter
+	[String] encoding, [String] delimiter, [String] file
 		=> [Iterator] positions, [Dictionary] metadata
 """
 readInvestmentTxtReport = partial(
@@ -295,6 +295,10 @@ readInvestmentTxtReport = partial(
 
 
 
+"""
+	[String] encoding, [String] delimiter, [String] file
+		=> [Iterator] positions, [Dictionary] metadata
+"""
 readProfitLossTxtReport = partial(
 	readTxtPositionWithUpdateFunction
   , partial(

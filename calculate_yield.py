@@ -5,15 +5,18 @@
 # 
 
 from geneva.report import readInvestmentTxtReport, readProfitLossTxtReport
+from utils.utility import allEquals
+from toolz.functoolz import compose
 from itertools import accumulate, count
 from functools import partial
-from toolz.functoolz import compose
+from os.path import join
 import logging
 logger = logging.getLogger(__name__)
 
 
 
-def getYieldFromFiles( investmentFiles, profitLossFiles, lastYearEndInvestmentFile
+def getYieldFromFiles( investmentFiles, profitLossFiles
+					 , lastYearEndNavWithCash, lastYearEndNavWithoutCash
 					 , impairment, cutoffMonth):
 	"""
 	1. get metadata and positions;
@@ -37,6 +40,68 @@ def getYieldFromFiles( investmentFiles, profitLossFiles, lastYearEndInvestmentFi
 	navDataWithCash = getAverageNav(sortedInvPositionsWithCutoff, withCash
 									, impairment, lastYearEndNavWithCash)
 	"""
+
+	sortedPLdata = sorted( map( partial(readProfitLossTxtReport, 'utf-16', '\t')
+							  , profitLossFiles)
+						 , key=lambda t: t[1]['PeriodEndDate'])
+	
+	sortedInvdata = sorted( map( partial(readInvestmentTxtReport, 'utf-16', '\t')
+							   , investmentFiles)
+						  , key=lambda t: t[1]['PeriodEndDate'])
+
+	checkMetaData( list(map(lambda t: t[1], sortedPLdata))
+				 , list(map(lambda t: t[1], sortedInvdata)))
+
+
+	return 0
+
+
+
+def checkMetaData(plMetadata, invMetadata):
+	"""
+	[List] plMetadata, [List] invMetadata
+		=> [Int] 0 if nothing goes wrong, throw exception otherwise
+	"""
+	showMetadata = lambda metadataList: \
+		'\n'.join(map( lambda m: '{0} {1} {2} {3}'.format(m['AccountingRunType'],
+							m['Portfolio'], m['BookCurrency'], m['PeriodEndDate'])
+					 , metadataList))
+
+	logger.debug('checkMetaData(): {0}'.format(showMetadata(plMetadata + invMetadata)))
+
+
+	if (len(plMetadata) != len(invMetadata)):
+		logger.error('checkMetaData(): length inconsistent: {0}, \
+						{1}'.format(len(plMetadata), len(invMetadata)))
+		raise ValueError
+
+
+	if not all(map( lambda m: m['AccountingRunType'] == 'ClosedPeriod'
+				  , plMetadata + invMetadata)):
+		logger.error('checkMetaData(): not all are of closed period')
+		raise ValueError
+
+	if not allEquals(map(lambda m: m['Portfolio'], plMetadata + invMetadata)):
+		logger.error('checkMetaData(): inconsistent portfolio')
+		raise ValueError
+
+	if not allEquals(map(lambda m: m['BookCurrency'], plMetadata + invMetadata)):
+		logger.error('checkMetaData(): inconsistent book currency')
+		raise ValueError
+
+	# if there are N metadata in plMetadata, then their month forms a 
+	# set {1..N}
+	monthCollection = lambda metadataList: \
+		set(map(lambda m: int(m['PeriodEndDate'].split('-')[1]), metadataList))
+
+
+	if not allEquals([ monthCollection(plMetadata)
+					 , monthCollection(invMetadata)
+					 , set(range(1, 1 + len(plMetadata)))
+					 ]):
+		logger.error('checkMetaData(): month collection invalid')
+		raise ValueError
+
 
 	return 0
 
@@ -219,6 +284,11 @@ if __name__ == '__main__':
 	# positions, metaData = readExcelReport(parser.parse_args().file)
 	# print(writeOutputCsv(getCsvFilename(metaData), count(positions)))
 
-	showTupleList(getAccumulatedReturn(range(5), True))
-	for x in getAverageNav(range(5), True, 0, 0, 120):
-		print(x)
+	investmentFiles = [ join('samples', 'investment positions 2020-01.txt')
+					  , join('samples', 'investment positions 2020-02.txt')
+					  ]
+
+	profitLossFiles = [ join('samples', 'profit loss 2020-01.txt')
+					  , join('samples', 'profit loss 2020-02.txt')]
+
+	getYieldFromFiles(investmentFiles, profitLossFiles, 0, 0, 0, 7)
