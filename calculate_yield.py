@@ -19,7 +19,15 @@ def getResultFromFiles( investmentFiles, profitLossFiles
 					  , lastYearEndNavWithCash, lastYearEndNavWithoutCash
 					  , impairment, cutoffMonth):
 	"""
+	[Iterable] list of investment position files,
+	[Iterator] list of profit loss files,
+	[Float] last year end Nav with cash,
+	[Float] last year end Nav without cash,
+	[Float] impairment,
+	[Int] cutoffMonth
 
+		=> ( result with cash
+		   , result without cash)
 	"""
 	sortedPLdata = sorted( map( partial(readProfitLossTxtReport, 'utf-16', '\t')
 							  , profitLossFiles)
@@ -45,7 +53,21 @@ def getResultFromFiles( investmentFiles, profitLossFiles
 def getResultFromPositions( sortedPLPositions, sortedInvPositionsWithCutoff
 						  , lastYearEndNavWithCash, lastYearEndNavWithoutCash
 						  , impairment):
+	"""
+	[List] profit loss positions sorted by month, like
+		[positions of month1, positions of month2, ...]
+	[List] investment positions sorted by month with cutoff parameter, like
+		[(positions of month1, isCutoff), (positions of month2, isCutoff), ...]
+	[Float] last year end Nav with cash,
+	[Float] last year end Nav without cash,
+	[Float] impairment
+		=> ( result with cash
+		   , result without cash)
 
+		where result is a tuple:
+		( accumulated realized return, return rate, accumulated total return
+		, return rate, average nav)
+	"""
 	combine = compose(
 		partial(map, lambda t: (t[0], t[0]/t[2]*100, t[1], t[1]/t[2]*100, t[2]))
 	  , lambda m1, m2: \
