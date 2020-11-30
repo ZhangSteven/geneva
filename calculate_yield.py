@@ -178,30 +178,11 @@ getAccumulatedReturn = lambda allPositions, withCash: \
 """
 getAverageNav = lambda allPositions, withCash, impairment, lastYearEndNav : \
 compose(
-	partial(map, lambda t: t[1]/t[0])
-  , partial(filter, lambda t: t[0] > 1)
+	partial(map, lambda t: (t[1] + lastYearEndNav)/(t[0] + 1))
   , partial(zip, count(1))
-  , lambda navs: accumulate(navs, initial=lastYearEndNav)
-  , lambda allPositions, withCash, impairment: \
-		map( lambda t: getNavFromPositions(withCash, t[1], impairment, t[0])
-		   , allPositions)
-
-)(allPositions, withCash, impairment)
-
-
-
-# This doesn't work: running the second time gives wierd results, why?
-# 
-# getAverageNav = compose(
-# 	partial(map, lambda t: t[1]/t[0])
-#   , partial(filter, lambda t: t[0] > 1)
-#   , partial(zip, count(1))
-#   , lambda allPositions, withCash, impairment, lastYearEndNav: \
-#   		accumulate( map( lambda t: getNavFromPositions(withCash, t[1], impairment, t[0])
-# 				  	   , allPositions)
-# 			  	  , lambda x, y: x + y
-# 			  	  , initial=lastYearEndNav)
-# )
+  , accumulate
+  , partial(map, lambda t: getNavFromPositions(withCash, t[1], impairment, t[0]))
+)(allPositions)
 
 
 
