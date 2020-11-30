@@ -4,10 +4,12 @@
 # in each category (except cash and FX Forward).
 # 
 
-from geneva.report import readInvestmentTxtReport, readProfitLossTxtReport
-from utils.utility import allEquals
+from geneva.report import readInvestmentTxtReport, readProfitLossTxtReport \
+						, getCurrentDirectory
+from utils.utility import allEquals, writeCsv
+from utils.file import getFiles
 from toolz.functoolz import compose
-from itertools import accumulate, count
+from itertools import accumulate, count, chain
 from functools import partial
 from os.path import join
 import logging
@@ -269,21 +271,54 @@ def getNavFromPositions(withCash, withOffset, impairment, positions):
 
 
 
+"""
+	[Function] (String -> Bool), [String] directory => [Iterable] files
+"""
+getFilesWithFilterFunc = lambda filterFunc, directory: \
+compose(
+	partial(map, lambda fn: join(directory, fn))
+  , partial(filter, filterFunc)
+  , getFiles
+)(directory)
 
-# getCsvFilename = lambda metaData: \
-# 	'investment types ' + metaData['Portfolio'] + ' ' + metaData['PeriodEndDate'] + '.csv'
+
+
+"""
+	[String] directory => [Iterable] investment position files
+"""
+getInvestmentFiles = partial(
+	getFilesWithFilterFunc
+  , lambda fn: fn.startswith('investment positions') and fn.endswith('.txt')
+)
+
+
+
+"""
+	[String] directory => [Iterable] investment position files
+"""
+getProfitLossFiles = partial(
+	getFilesWithFilterFunc
+  , lambda fn: fn.startswith('profit loss') and fn.endswith('.txt')
+)
 
 
 
 """
 	[String] filename, [Dictionary] typeCount => [String] output csv name
 """
-# writeOutputCsv = lambda filename, typeCount: \
-# 	writeCsv( filename
-# 			, chain( [('InvestmentType', 'UniquePositionCount')]
-# 				   , typeCount.items())
-# 			)
-
+writeOutputCsv = lambda suffix, data, lastYearEndNav, impairment, cutoffMonth: \
+	writeCsv( 'CLO bond yield ' + suffix + ' .csv' 
+			, chain( [( 'Month', 'Accumulated Realized Return', 'Return Rate'
+					  , 'Accumulated Total Return', 'Return Rate', 'Average Nav')]
+				   , map(lambda t: (t[0], *t[1]), zip(count(1), data))
+				   , [()]
+				   , [('Scenario', suffix)]
+				   , [('Last Year End Nav', lastYearEndNav)]
+				   , [('Impairment', impairment)]
+				   , [('Cutoff Month', cutoffMonth)]
+				   )
+			, delimiter=','
+			)
 
 
 
@@ -291,58 +326,42 @@ if __name__ == '__main__':
 	import logging.config
 	logging.config.fileConfig('logging.config', disable_existing_loggers=False)
 
-	# import argparse
-	# parser = argparse.ArgumentParser(description='Give statistics of investment types')
-	# parser.add_argument( 'file', metavar='file', type=str
-	# 				   , help='investment position report')
+	import argparse
+	parser = argparse.ArgumentParser(description='Calculate Portfolio Yield')
+	parser.add_argument( 'cutoff', metavar='cutoff', type=int
+					   , help='cutoff month, the last month when the CN Energy bond interest income is offset in PL report.')
 
+	import configparser
+	config = configparser.ConfigParser()
+	config.read('calculate_yield.config')
 
 	"""
 		Generate an investment position report, then:
 
-		$python count_investment.py <file name with path>
+		$python calculate_yield.py <cutoff month>
 
-		Example:
-
-		$python count_investment.py samples/investment01.xlsx
-
+		The cutoff month is determined by the underlying data. For example, 
+		if July is the last month when the fund accounting team booked the
+		offset for CN Energy interest income. Then cutoff = 7.
 	"""
+	withCash, withoutCash = \
+		getResultFromFiles( getInvestmentFiles(config['Input']['dataDirectory'])
+						  , getProfitLossFiles(config['Input']['dataDirectory'])
+						  , float(config['Input']['lastYearEndNavWithCash'])
+						  , float(config['Input']['lastYearEndNavWithOutCash'])
+						  , float(config['Input']['impairment'])
+						  , parser.parse_args().cutoff)
 
-	# Sequence of the files does not matter
-	investmentFiles = [ join('samples', 'investment positions 2020-06.txt')
-					  , join('samples', 'investment positions 2020-07.txt')
-					  , join('samples', 'investment positions 2020-08.txt')
-					  , join('samples', 'investment positions 2020-09.txt')
-					  , join('samples', 'investment positions 2020-10.txt')
-					  , join('samples', 'investment positions 2020-01.txt')
-					  , join('samples', 'investment positions 2020-02.txt')
-					  , join('samples', 'investment positions 2020-03.txt')
-					  , join('samples', 'investment positions 2020-04.txt')
-					  , join('samples', 'investment positions 2020-05.txt')
-					  ]
-
-	profitLossFiles = [ join('samples', 'profit loss 2020-06.txt')
-					  , join('samples', 'profit loss 2020-07.txt')
-					  , join('samples', 'profit loss 2020-08.txt')
-					  , join('samples', 'profit loss 2020-09.txt')
-					  , join('samples', 'profit loss 2020-10.txt')
-					  , join('samples', 'profit loss 2020-01.txt')
-					  , join('samples', 'profit loss 2020-02.txt')
-					  , join('samples', 'profit loss 2020-03.txt')
-					  , join('samples', 'profit loss 2020-04.txt')
-					  , join('samples', 'profit loss 2020-05.txt')
-					  ]
-
-	
-	withCash, withoutCash = getResultFromFiles( investmentFiles
-							  				  , profitLossFiles
-							  				  , 177801674041.66
-							  				  , 177800934590.20
-							  				  , 3212689500.00, 7)
-	
-	for x in withCash:
-		print(x)
-
-	print()
-	for x in withoutCash:
-		print(x)
+	print(
+		writeOutputCsv( 'withCash'
+					  , withCash
+					  , config['Input']['lastYearEndNavWithCash']
+					  , config['Input']['impairment']
+					  , parser.parse_args().cutoff)
+	  	+ '\n' + \
+		writeOutputCsv( 'withoutCash'
+					  , withoutCash
+					  , config['Input']['lastYearEndNavWithOutCash']
+					  , config['Input']['impairment']
+					  , parser.parse_args().cutoff)
+	)
