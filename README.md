@@ -72,9 +72,20 @@ Count the number of securities per type from an investment report. If there are 
 
 
 ## calculate_yield.py
-Calculate the portfolio return (保监会口径) of a portfoio or portfoio group. Input required:
+Calculate the realized and total return (保监会口径) of a portfoio or portfoio group. Input files include:
 
 Report | Format | Remarks
 -------|--------|--------
 Investment Positions | Txt (unicode text) | named as "investment positions xxx"
 Profit and Loss | Txt (unicode text) | named as "profit loss xxx"
+
+Other input parameters:
+
+Parameter | Meaning | Remarks
+----------|---------|--------
+lastYearEndNavWithCash | Nav of last year end (with cash) | config file
+lastYearEndNavWithOutCash | Nav of last year end (without cash) | config file
+impairment | impairment amount of this year | config file
+cutoff month | the last month the fund accounting team booked the offset for CN Energy interest income | command line
+
+Note: the cutoff month must be consistent with the underlying data. For example the current cutoff month is 7 and the fund account team just booked offset for CN Energy interest income in Auguest, then we must re-generate all the reports since August and run the program again with cutoff = 8.
