@@ -110,8 +110,8 @@ def checkMetaData(plMetadata, invMetadata):
 
 
 	if (len(plMetadata) != len(invMetadata)):
-		logger.error('checkMetaData(): length inconsistent: {0}, \
-						{1}'.format(len(plMetadata), len(invMetadata)))
+		logger.error('checkMetaData(): inconsistent data length : {0}, {1}'.format(
+					len(plMetadata), len(invMetadata)))
 		raise ValueError
 
 
@@ -138,7 +138,7 @@ def checkMetaData(plMetadata, invMetadata):
 					 , monthCollection(invMetadata)
 					 , set(range(1, 1 + len(plMetadata)))
 					 ]):
-		logger.error('checkMetaData(): month collection invalid')
+		logger.error('checkMetaData(): invalid month collection')
 		raise ValueError
 
 
@@ -307,11 +307,11 @@ getProfitLossFiles = partial(
 	[String] filename, [Dictionary] typeCount => [String] output csv name
 """
 writeOutputCsv = lambda suffix, data, lastYearEndNav, impairment, cutoffMonth: \
-	writeCsv( 'CLO bond yield ' + suffix + ' .csv' 
+	writeCsv( 'CLO bond yield ' + suffix + '.csv' 
 			, chain( [( 'Month', 'Accumulated Realized Return', 'Return Rate'
 					  , 'Accumulated Total Return', 'Return Rate', 'Average Nav')]
 				   , map(lambda t: (t[0], *t[1]), zip(count(1), data))
-				   , [()]
+				   , [()]	# empty line
 				   , [('Scenario', suffix)]
 				   , [('Last Year End Nav', lastYearEndNav)]
 				   , [('Impairment', impairment)]
@@ -330,6 +330,7 @@ if __name__ == '__main__':
 	parser = argparse.ArgumentParser(description='Calculate Portfolio Yield')
 	parser.add_argument( 'cutoff', metavar='cutoff', type=int
 					   , help='cutoff month, the last month when the CN Energy bond interest income is offset in PL report.')
+	cutoffMonth = parser.parse_args().cutoff
 
 	import configparser
 	config = configparser.ConfigParser()
@@ -350,18 +351,16 @@ if __name__ == '__main__':
 						  , float(config['Input']['lastYearEndNavWithCash'])
 						  , float(config['Input']['lastYearEndNavWithOutCash'])
 						  , float(config['Input']['impairment'])
-						  , parser.parse_args().cutoff)
+						  , cutoffMonth)
 
-	print(
-		writeOutputCsv( 'withCash'
-					  , withCash
-					  , config['Input']['lastYearEndNavWithCash']
-					  , config['Input']['impairment']
-					  , parser.parse_args().cutoff)
-	  	+ '\n' + \
-		writeOutputCsv( 'withoutCash'
-					  , withoutCash
-					  , config['Input']['lastYearEndNavWithOutCash']
-					  , config['Input']['impairment']
-					  , parser.parse_args().cutoff)
-	)
+	print(writeOutputCsv( 'with cash'
+					  	, withCash
+					  	, config['Input']['lastYearEndNavWithCash']
+					  	, config['Input']['impairment']
+					  	, cutoffMonth))
+
+	print(writeOutputCsv( 'without cash'
+					  	, withoutCash
+					  	, config['Input']['lastYearEndNavWithOutCash']
+					  	, config['Input']['impairment']
+					  	, cutoffMonth))
