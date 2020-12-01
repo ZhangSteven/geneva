@@ -93,3 +93,5 @@ impairment | impairment amount of this year | config file
 cutoff month | the last month fund accounting team booked offset for CN Energy interest income | command line
 
 Note: the cutoff month must be consistent with the underlying data. For example the current cutoff month is 7 and fund account team just booked offset for CN Energy interest income in August, then we must re-generate all the reports since August and run the program again with cutoff = 8.
+
+For the calculation methodology, see the YieldCalculation.md file.
