@@ -36,8 +36,11 @@ Realized Return is the sum of the above 3 components.
 
 Assume: 
 
-1. For interest income, no special case like CN Energy is bought this year;
+1. For interest income, there is no special case like CN Energy bought this year;
 2. Profit gain loss offset for CN Energy interest income does not appear as deposit withdrawl.
+
+#### Questions
+When a bond matures, does it produces realized gain loss? If so, would we need to add those to the realized gain (买卖价差)?
 
 
 ### Time Weighted Capital (资金平均占用额)
@@ -57,4 +60,6 @@ Fair Value Change (公允价值变动损益) | unrealized price G/L, unrealized 
 Total Return = Realized Return of the same period + Fair Value Change
 
 
+### Special Cases
 
+Some early redemptions (bond call) are booked as bond sales in Geneva. We need to treat them as maturity events. Maybe we should list the Tran IDs of such sales in a config file so that we can filter them out in the cash ledger.
