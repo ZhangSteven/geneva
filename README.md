@@ -1,8 +1,9 @@
 # Geneva
-This project aims at creating a library to read and process reports from Advent Geneva system. When we export reports from Geneva, usually we will choose the comma delimited format. If we do it manually, the following will happen:
+Geneva related code base.
 
-1. An Excel window pops up to open the exported csv file;
-2. We save it with an output format.
+
+## geneva.py
+This module contains common code to read reports from Advent Geneva. When we generate a report and export it in comma delimited format, we can choose to save it in many formats, like below:
 
 Save As Type | Output File Type | Encoding
 -------------|------------------|---------
@@ -11,9 +12,54 @@ Text (Tab delimited) | Text (.txt) | utf-8
 Unicode text | Text (.txt) | utf-16
 CSV (Comma delimited) | Text (.csv) | likely utf-8, to be confirmed
 
+But when Geneva generates reports in batch mode, the output format will be "Unicode text".
 
 
-## To Do
-How to read a multipart file, e.g., investment all funds 2020-09-30.txt
+### To Do
+Reading a multipart report.
 
-This file contains multiple portfolios.
+Usually a report contains 4 parts:
+
+(section 1: positions)
+header line of postions
+position 1
+position 2
+...
+position N
+
+<< a blank line <<
+
+(section 2: meta data)
+header line of meta data (always "ParameterName", "ParameterValue")
+line 1 (each line is a pair of header and value)
+line 2
+...
+line N
+
+<< a blank line <<
+
+(section 3: run time data)
+header line of meta data (always "ParameterName", "ParameterValue")
+line 1 (each line is a pair of header and value)
+line 2
+...
+line N
+
+<< a blank line <<
+
+(section 4: error data)
+header line of meta data (always "EventNumber", "ErrorMessage")
+line 1 (each line is a pair of header and value)
+line 2
+...
+line N
+
+When a section is empty, only the header line will be there. For example, check out the samples/11490-A investment positions 2020-12.txt file.
+
+A report can also contain a number of the above 4 sections, i.e., when it contains multiple portfolios. Therefore we need to develop functions like:
+
+readProfitLossTxtReport()
+
+readMultipartProfitLossTxtReport()
+
+To make this happen, probabaly we need to change the interface to read lines instead of file.
