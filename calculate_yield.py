@@ -1,7 +1,6 @@
 # coding=utf-8
 #
-# From an inveestment report, give statistics on the number of unique investments
-# in each category (except cash and FX Forward).
+# Calculate portfolio yield
 # 
 
 from geneva.report import readInvestmentTxtReport, readProfitLossTxtReport \

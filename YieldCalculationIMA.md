@@ -11,12 +11,12 @@ X | | | | | |
 
 Where,
 
-Item | Meaning
------|---------
-Accumulated Realized Return | The accumulated realized return since year beginning
-Accumulated Total Return | Similar to the above, but on total return number
-Time Weighted Capital | Time weighted new capital since year beginning
-Return Rate | Accumulated Return / Time Weighted Capital
+Item | 对应中文 |Meaning
+-----|----------|-------
+Accumulated Realized Return | 总实现收益 | The accumulated realized return since year beginning
+Accumulated Total Return | 总综合收益 | Similar to the above, but on total return number
+Time Weighted Capital | 资金平均占用额 | Time weighted new capital since year beginning
+Return Rate | 收益率 | Accumulated Return / Time Weighted Capital
 
 
 
@@ -30,7 +30,7 @@ Component | Columns | Calculation | Report
 ----------|---------|-------------|-------
 Interest Income (息类收入) | interest, dividend | add, for positions established this year | profit loss
 Realized G/L (买卖价差) | realized price G/L, realized FX G/L, realized cross | add, for all positions | profit loss
-Fair Value Change (公允价值变动损益) | N/A | 0, since HTM positions have not value change | N/A
+Fair Value Change (公允价值变动损益) | N/A | 0, since HTM positions have no fair value change | N/A
 
 Realized Return is the sum of the above 3 components.
 

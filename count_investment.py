@@ -1,6 +1,6 @@
 # coding=utf-8
 #
-# From an inveestment report, give statistics on the number of unique investments
+# From an investment report, give statistics on the number of unique investments
 # in each category (except cash and FX Forward).
 # 
 
