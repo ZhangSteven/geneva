@@ -63,3 +63,18 @@ readProfitLossTxtReport()
 readMultipartProfitLossTxtReport()
 
 To make this happen, probabaly we need to change the interface to read lines instead of file.
+
+
+
+## count_investment.py
+Count the number of securities per type from an investment report. If there are multiple positions of the same security, e.g., AFS and HTM position of the same bond, it's considered as one security.
+
+
+
+## calculate_yield.py
+Calculate the portfolio return (保监会口径) of a portfoio or portfoio group. Input required:
+
+Report | Format | Remarks
+-------|--------|--------
+Investment Positions | Txt (unicode text) | named as "investment positions xxx"
+Profit and Loss | Txt (unicode text) | named as "profit loss xxx"
