@@ -13,25 +13,28 @@ Where,
 
 Item | Meaning
 -----|---------
-Accumulated Realized Return | The accumulated realized return since year beginning.
-Accumulated Total Return | Similar to the above, but on total return numbers.
-Time Weighted Capital | New cash deposit 
+Accumulated Realized Return | The accumulated realized return since year beginning
+Accumulated Total Return | Similar to the above, but on total return number
+Time Weighted Capital | Time weighted new capital since year beginning
 Return Rate | Accumulated Return / Time Weighted Capital
-Realized Return | 
+
+
 
 ## Positions to Include
-Only include positions that are newly established this year, i.e., interest income and other gain loss due to existing positions are not considered.
+Only gain loss due to newly established positions this year are considered, i.e., any gain loss due to existing positions are ignored.
 
 
-新增委托额 includes new cash deposit and cash income due to bond maturity.
+Time weighted capital includes new cash deposit and cash income due to bond maturity.
 
 What about:
 
 cash withdrawal? considered as negative deposit
 
-coupon payment?
+coupon payment? make a table first
 
 
 
 ## Calculation Methodology
-Here is how to calculate realized return per month, total return per month and time weighted capital year to date.
+Here is how to calculate realized return and total return per month, as well as time weighted capital year to date.
+
+
