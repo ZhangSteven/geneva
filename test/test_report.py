@@ -4,7 +4,7 @@
 import unittest2
 from geneva.report import getCurrentDirectory, readExcelReport, readTxtReport \
 						, readTaxlotTxtReport, readInvestmentTxtReport \
-						, readProfitLossTxtReport
+						, readProfitLossTxtReport, readCashLedgerTxtReport
 from os.path import join
 
 
@@ -69,6 +69,17 @@ class TestReport(unittest2.TestCase):
 		positions = list(positions)
 		self.assertEqual(133, len(positions))
 		self.verifyProfitLossPosition(positions[0])
+
+
+
+	def testReadCashLedgerTxtReport(self):
+		inputFile = join(getCurrentDirectory(), 'samples', 'cash ledger 2020-01.txt')
+		positions, metaData = readCashLedgerTxtReport('utf-16', '\t', inputFile)
+		self.verifyMetaData3(metaData)
+
+		positions = list(positions)
+		self.assertEqual(66, len(positions))
+		self.verifyCashLedgerPosition(positions[0])
 
 
 
@@ -140,3 +151,15 @@ class TestReport(unittest2.TestCase):
 		self.assertEqual('Chinese Renminbi Yuan', position['Description'])
 		self.assertEqual(1, position['EndingLocalPrice'])
 		self.assertEqual(0, position['RealizedCross'])
+
+
+
+	def verifyCashLedgerPosition(self, position):
+		self.assertEqual('Chinese Renminbi Yuan Opening Balance', position['Currency_OpeningBalDesc'])
+		self.assertEqual(0, position['CurrBegBalLocal'])
+		self.assertEqual('Opening Balance', position['GroupWithinCurrency_OpeningBalDesc'])
+		self.assertEqual('2020-01-02', position['CashDate'])
+		self.assertEqual('1109290', position['TransID'])
+		self.assertEqual(0.93, position['BookAmount'])
+		self.assertEqual(3730.69, position['CurrClosingBalBook'])
+		self.assertEqual('Chinese Renminbi Yuan Closing Balance', position['Currency_ClosingBalDesc'])

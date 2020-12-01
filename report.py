@@ -169,8 +169,12 @@ def readTxtReport(encoding, delimiter, file):
 				yield line
 
 
-	stringToList = lambda delimiter, line: \
-		line.strip().split(delimiter)
+	# [String] line, [String] delimeter => [List] values in line
+	stringToList =  compose(
+		list
+	  , partial(map, lambda s: s.strip())
+	  , lambda delimiter, line: line.strip().split(delimiter)
+	)
 
 	
 	return compose(
@@ -318,6 +322,37 @@ readProfitLossTxtReport = partial(
 	  	, 'RealizedPrice': updateNumber
 	  	, 'RealizedFX': updateNumber
 	  	, 'RealizedCross': updateNumber
+	  	}
+  	)
+)
+
+
+
+"""
+	[String] encoding, [String] delimiter, [String] file
+		=> [Iterator] positions, [Dictionary] metadata
+"""
+readCashLedgerTxtReport = partial(
+	readTxtPositionWithUpdateFunction
+  , partial(
+	  	updateDictionaryWithFunction
+	  , { 'CurrBegBalLocal': updateNumber
+	  	, 'CurrBegBalBook': updateNumber
+	  	, 'GroupWithinCurrencyBegBalLoc': updateNumber
+	  	, 'GroupWithinCurrencyBegBalBook': updateNumber
+	  	, 'Quantity': updateNumber
+	  	, 'Price': updateNumber
+	  	, 'LocalAmount': updateNumber
+	  	, 'LocalBalance': updateNumber
+	  	, 'BookAmount': updateNumber
+	  	, 'BookBalance': updateNumber
+	  	, 'GroupWithinCurrencyClosingBalLoc': updateNumber
+	  	, 'GroupWithinCurrencyClosingBalBook': updateNumber
+	  	, 'CurrClosingBalLocal': updateNumber
+	  	, 'CurrClosingBalBook': updateNumber
+	  	, 'CashDate': updateDate
+	  	, 'TradeDate': updateDate
+	  	, 'SettleDate': updateDate
 	  	}
   	)
 )
