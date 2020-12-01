@@ -47,8 +47,11 @@ When a bond matures, does it produces realized gain loss? If so, would we need t
 
 Category | Calculation | Report
 ---------|-------------|-------
-Deposit (Withdrawal) | Amount X (report date - cash date + 1)/365, withdrawal has negative amount | cash ledger
-Maturity (Interest) | Amount X (report date - cash date)/365 | cash ledger
+Deposit (Withdrawal) | BookAmount X (report date - cash date + 1)/365, withdrawal has negative amount | cash ledger
+Maturity (Interest) | BookAmount X (report date - cash date)/365 | cash ledger
+
+#### Questions
+Does interest count in the time weighted capital?
 
 
 ### Total Return (综合收益)
