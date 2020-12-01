@@ -67,12 +67,16 @@ To make this happen, probabaly we need to change the interface to read lines ins
 
 
 ## count_investment.py
-Count the number of securities per type from an investment report. If there are multiple positions of the same security, e.g., AFS and HTM position of the same bond, it's considered as one security.
+Count the number of securities per type from an investment report. If there are multiple positions of the same security, e.g., AFS and HTM position of the same bond, it's considered as one security. Input files required:
+
+Report | Format 
+-------|-------
+Investment Positions | Txt (unicode text)
 
 
 
 ## calculate_yield.py
-Calculate the realized and total return (保监会口径) of a portfoio or portfoio group. Input files include:
+Calculate the realized and total return (保监会口径) of a portfoio or portfoio group. Input files required:
 
 Report | Format | Remarks
 -------|--------|--------
@@ -81,11 +85,11 @@ Profit and Loss | Txt (unicode text) | named as "profit loss xxx"
 
 Other input parameters:
 
-Parameter | Meaning | Remarks
+Parameter | Meaning | Where
 ----------|---------|--------
 lastYearEndNavWithCash | Nav of last year end (with cash) | config file
 lastYearEndNavWithOutCash | Nav of last year end (without cash) | config file
 impairment | impairment amount of this year | config file
-cutoff month | the last month the fund accounting team booked the offset for CN Energy interest income | command line
+cutoff month | the last month fund accounting team booked offset for CN Energy interest income | command line
 
-Note: the cutoff month must be consistent with the underlying data. For example the current cutoff month is 7 and the fund account team just booked offset for CN Energy interest income in Auguest, then we must re-generate all the reports since August and run the program again with cutoff = 8.
+Note: the cutoff month must be consistent with the underlying data. For example the current cutoff month is 7 and fund account team just booked offset for CN Energy interest income in August, then we must re-generate all the reports since August and run the program again with cutoff = 8.
