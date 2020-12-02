@@ -27,11 +27,9 @@ def getAccumulatedTimeWeightedCapital(sortedCLPositions):
 	=> [Iterable] Float (time weighted return at each period end date)
 
 	"""
-	return compose(
-		partial(map, lambda t: getTimeWeightedCapital(t[0], t[1]))
-	  , partial( accumulate
-	  		   , lambda t1, t2: (t2[0], t1[1] + t2[1]))
-	)(sortedCLPositions)
+	return map( lambda t: getTimeWeightedCapital(t[0], t[1])
+			  , accumulate( sortedCLPositions
+	  		   			  , lambda t1, t2: (t2[0], t1[1] + t2[1])))
 
 
 
