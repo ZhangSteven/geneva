@@ -50,7 +50,7 @@ def getTimeWeightedCapital(reportDate, positions):
 		(stringToDate(day2) - stringToDate(day1)).days
 
 
-	getDays = lambda p: tranType, cashDate, reportDate\
+	getDays = lambda tranType, cashDate, reportDate :\
 		getDaysDifference(cashDate, reportDate) if tranType in ['Interest', 'Mature'] \
 		else getDaysDifference(cashDate, reportDate) + 1
 
