@@ -23,7 +23,7 @@ logger = logging.getLogger(__name__)
 
 def getAccumulatedTimeWeightedCapital(sortedCLPositions):
 	"""
-	[Iterable] (period end date, positions of that period)
+	[Iterable] ([String] period end date, [List] positions of that period)
 	=> [Iterable] Float (time weighted return at each period end date)
 
 	"""
@@ -36,7 +36,7 @@ def getAccumulatedTimeWeightedCapital(sortedCLPositions):
 def getTimeWeightedCapital(reportDate, positions):
 	"""
 	[String] report date (yyyy-mm-dd),
-	[Iterable] cash leger positions,
+	[List] cash leger positions,
 		=> [Float] time weighted capital
 	"""
 	stringToDate = lambda d: \
@@ -48,22 +48,42 @@ def getTimeWeightedCapital(reportDate, positions):
 		(stringToDate(day2) - stringToDate(day1)).days
 
 
-	getDays = lambda tranType, cashDate, reportDate :\
-		getDaysDifference(cashDate, reportDate) if tranType in ['Interest', 'Mature'] \
-		else getDaysDifference(cashDate, reportDate) + 1
+	"""
+		[String] report date (yyyy-mm-dd),
+		[Iterable cash ledger positions
+			=> [Float] time weighted capital
 
-
-	getTimeWeightAmount = lambda reportDate, p: \
-		p['BookAmount'] * getDays(p['TranDescription'], p['CashDate'], reportDate)/365.0
-
-
-	return \
+		Calculate time weighted capital for internal cash flow, i.e., bond mature
+	"""
+	getTimeWeightAmountInternalCF = lambda reportDate, positions: \
 	compose(
 		sum
-	  , partial(map, partial(getTimeWeightAmount, reportDate))
-	  , partial( filter
-	  		   , lambda p: p['TranDescription'] in ['Interest', 'Mature', 'Withdraw', 'Deposit'])
+	  , partial( map
+	  		   , lambda p: p['BookAmount'] * getDaysDifference(p['CashDate'], reportDate)/365.0)
+	  , partial(filter, lambda p: p['TranDescription'] == 'Mature')
 	)(positions)
+
+
+	"""
+		[String] report date (yyyy-mm-dd),
+		[Iterable cash ledger positions
+			=> [Float] time weighted capital
+
+		Calculate time weighted capital for external cash flow, i.e., deposit
+		and withdrawal
+	"""
+	getTimeWeightAmountExternalCF = lambda reportDate, positions: \
+	compose(
+		sum
+	  , partial( map
+	  		   , lambda p: p['BookAmount'] * (getDaysDifference(p['CashDate'], reportDate) + 1)/365.0)
+	  , partial(filter, lambda p: p['TranDescription'] in ['Deposit', 'Withdraw'])
+	)(positions)
+
+
+	return getTimeWeightAmountInternalCF(reportDate, positions) \
+		 + getTimeWeightAmountExternalCF(reportDate, positions)
+
 
 
 
