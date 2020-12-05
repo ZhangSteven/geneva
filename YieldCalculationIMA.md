@@ -20,16 +20,12 @@ Return Rate | 收益率 | Accumulated Return / Time Weighted Capital
 
 
 
-## Calculation Methodology
-Here is the way to calculate returns.
-
-
-### Realized Return (实现投资收益)
+## Realized Return (实现投资收益)
 
 Component | Columns | Calculation | Report
 ----------|---------|-------------|-------
-Interest Income (息类收入) | interest, dividend | add, for positions established this year | profit loss
-Realized G/L (买卖价差) | realized price G/L, realized FX G/L, realized cross | add, for all positions | profit loss
+Interest Income (息类收入) | interest, dividend | add, for tax lots established this year | profit loss
+Realized G/L (买卖价差) | realized price G/L, realized FX G/L, realized cross | add, for all (?) positions | profit loss
 Fair Value Change (公允价值变动损益) | N/A | 0, since HTM positions have no fair value change | N/A
 
 Realized Return is the sum of the above 3 components.
@@ -39,22 +35,21 @@ Assume:
 1. For interest income, there is no special case like CN Energy bought this year;
 2. Profit gain loss offset for CN Energy interest income does not appear as deposit withdrawl.
 
-#### Questions
-When a bond matures, does it produces realized gain loss? If so, would we need to add those to the realized gain (买卖价差)?
+### Questions
+1. For realized G/L (买卖价差) above, is it for all positions or just positions established this year?
 
 
-### Time Weighted Capital (资金平均占用额)
+
+## Time Weighted Capital (资金平均占用额)
 
 Category | Calculation | Report
 ---------|-------------|-------
 Deposit (Withdrawal) | BookAmount X (report date - cash date + 1)/365, withdrawal has negative amount | cash ledger
-Maturity (Interest) | BookAmount X (report date - cash date)/365 | cash ledger
-
-#### Questions
-Does interest count in the time weighted capital?
+Maturity | BookAmount X (report date - cash date)/365 | cash ledger
 
 
-### Total Return (综合收益)
+
+## Total Return (综合收益)
 
 Component | Columns | Calculation | Report
 ----------|---------|-------------|-------
@@ -63,6 +58,11 @@ Fair Value Change (公允价值变动损益) | unrealized price G/L, unrealized 
 Total Return = Realized Return of the same period + Fair Value Change
 
 
-### Special Cases
 
-Some early redemptions (bond call) are booked as bond sales in Geneva. We need to treat them as maturity events. Maybe we should list the Tran IDs of such sales in a config file so that we can filter them out in the cash ledger.
+## Special Cases
+
+1. Early redemptions (bond call) are booked as bond sales in Geneva. We need to treat them as bond maturity events.
+
+2. Interfund transfers appear as buy/sell trades. We should ignore them in realized G/L calculation.
+
+3. How does interfund transfers affect total G/L?
