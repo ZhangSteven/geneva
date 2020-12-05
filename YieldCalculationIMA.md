@@ -65,6 +65,4 @@ Total Return = Realized Return of the same period + Fair Value Change
 
 2. Interfund transfers appear as buy/sell trades. We should ignore them in realized G/L calculation.
 
-3. 
-
-We need to treat them as maturity events. Maybe we should list the Tran IDs of such sales in a config file so that we can filter them out in the cash ledger.
+3. How does interfund transfers affect total G/L?
