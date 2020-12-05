@@ -30,10 +30,11 @@ Fair Value Change (公允价值变动损益) | N/A | 0, since HTM positions have
 
 Realized Return is the sum of the above 3 components.
 
-Assume: 
+### Interest Income
+The steps to get tax lots this year:
 
-1. For interest income, there is no special case like CN Energy bought this year;
-2. Profit gain loss offset for CN Energy interest income does not appear as deposit withdrawl.
+1. Generate tax lot report as of last year end;
+2. Generate daily tax lot
 
 ### Questions
 1. For realized G/L (买卖价差) above, is it for all positions or just positions established this year?
