@@ -2,7 +2,7 @@
 
 The output looks something like below. The following output needs to be calculated in two scenarios: with cash and without cash.
 
-Month | Accumulated Realized Return | Return Rate | Accumulated Total Return | Return Rate | Time Weighted Capital
+Month | Realized Return | Return Rate | Total Return | Return Rate | Time Weighted Capital
 ------|-----------------------------|-------------|--------------------------|------------|------------
 1 | | | | | |
 2 | | | | | |
@@ -13,10 +13,10 @@ Where,
 
 Item | 对应中文 |Meaning
 -----|----------|-------
-Accumulated Realized Return | 总实现收益 | The accumulated realized return since year beginning
-Accumulated Total Return | 总综合收益 | Similar to the above, but on total return number
-Time Weighted Capital | 资金平均占用额 | Time weighted new capital since year beginning
-Return Rate | 收益率 | Accumulated Return / Time Weighted Capital
+Realized Return | 实现收益 | realized return since year beginning
+Total Return | 综合收益 | total return since year beginning
+Time Weighted Capital | 资金平均占用额 | time weighted new capital since year beginning
+Return Rate | 收益率 | Return / Time Weighted Capital
 
 
 
@@ -27,16 +27,9 @@ Realized Return is the sum of the below 3 components:
 2. Realized G/L (买卖价差) ;
 3. Fair Value Change (公允价值变动损益) .
 
-Component | Columns | Calculation | Filter | Report
-----------|---------|-------------|--------|-------
-Interest Income (息类收入) | interest, dividend | add, for tax lots established this year | for tax lots added this year | profit loss
-Realized G/L (买卖价差) | realized price G/L, realized FX G/L, realized cross | add, for all (?) positions | profit loss
-Fair Value Change (公允价值变动损益) | N/A | 0, since HTM positions have no fair value change | N/A
-
-
 
 ### Interest Income
-The calculation here applies to new tax lots this year. New tax lots are tax lots that are not in the previous year's daily interest accrual details report. Tax lots are identified by tax lot IDs (the LotID column). We have
+The calculation here applies to new tax lots this year. New tax lots are tax lots that are not in the previous year end's daily interest accrual details report. Tax lots are identified by tax lot IDs (the LotID column). We have
 
 interest income of a tax lot during a period = accrued interest of the tax lot at end of the period - accrued interest at beginning of the period + total coupon payment book value during the same period
 
@@ -63,7 +56,7 @@ total coupon payment on that day = sum of LotSumOfChangeInAIBook
 
 Then, on Feb 29th, each tax lot of USM8220VAA28 HTM has:
 
-coupon payment for the tax lot on that day = pro-rata share of total coupon payment of the tax lot
+coupon payment for the tax lot on the day = pro-rata share of total coupon payment of the tax lot
 
 For example,
 
@@ -80,9 +73,15 @@ total coupon payment for a tax lot during a period = sum of coupon payment for t
 
 
 
+### Realized G/L
+For realized G/L (买卖价差) above, is it for all positions or just positions established this year?
 
-### Questions
-1. For realized G/L (买卖价差) above, is it for all positions or just positions established this year?
+
+
+## Special Cases
+1. Interfund transfers appear as buy/sell trades. We should ignore them in realized G/L calculation.
+
+2. How does interfund transfers affect total G/L?
 
 
 
@@ -92,6 +91,10 @@ Category | Calculation | Report
 ---------|-------------|-------
 Deposit (Withdrawal) | BookAmount X (report date - cash date + 1)/365, withdrawal has negative amount | cash ledger
 Maturity | BookAmount X (report date - cash date)/365 | cash ledger
+
+
+### Early Redemption Trades
+Early redemptions (bond call) are booked as bond sales in Geneva. We need to treat them as bond maturity events.
 
 
 
@@ -105,10 +108,4 @@ Total Return = Realized Return of the same period + Fair Value Change
 
 
 
-## Special Cases
 
-1. Early redemptions (bond call) are booked as bond sales in Geneva. We need to treat them as bond maturity events.
-
-2. Interfund transfers appear as buy/sell trades. We should ignore them in realized G/L calculation.
-
-3. How does interfund transfers affect total G/L?
