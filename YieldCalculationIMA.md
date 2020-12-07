@@ -29,19 +29,19 @@ Realized Return is the sum of the below 3 components:
 
 
 ### Interest Income
-interest income = sum of interest income of all new tax lots created during the period
+interest income = sum of interest income of new tax lots created during a period
 
-A new tax lot created during the period is a tax lot that,
-1. appears in the daily interest accrual details report during the period (*current period report*);
-2. does not appear in daily interest accrual details report with a period end date just one day before the current period (*previous period report*).
+A new tax lot created during a period is a tax lot that,
+1. appears in the daily interest accrual details report during a period (*current period report*);
+2. does not appear in daily interest accrual details report (*previous period report*) with a period end date just one day before the start date of the current period.
 
 For a tax lot,
 
-interest income during the period = accrued interest at current period report - accrued interest at previous period report + coupon payment at current period report
+interest income during current period = accrued interest at current period report - accrued interest at previous period report + coupon payment at current period report
 
 
 #### Accrued Interest
-On a certain day, the accrued interest of a tax lot is shown in the LotSumOfEndBalanceBook column of a daily interest accrual details report. The accrued interest of a tax lot during a period is the accrued interest of the tax lot on the last day the tax lot appears during that period.
+Accrued interest is shown in the LotSumOfEndBalanceBook column of a daily interest accrual details report. The accrued interest of a tax lot during a period is the accrued interest of the tax lot on the last day the tax lot appears during that period.
 
 For example, a tax lot appears like this in the report
 
@@ -55,17 +55,7 @@ d_N | v_N
 
 Then accrued interest of the tax lot is v_N.
 
-If the tax lot does not appear in a report during some period, then accued interest is 0 for that period.
-
-
-Item | Value
------|------
-Interest Income Start Day | 2020-01-01
-Interest Income End Day | 2020-06-30
-Accrued Interest Start Day | 2019-12-31
-Accrued Interest End Day | 2020-06-30
-
-Note that if we want 2020-01-01 as the start date and 2020-06-30 and the end date of interest income, it means interest income on the two dates are also included. Therefore we should use 2019-12-31 and 2020-06-30 as the period start date and end date to compute the change of LotSumOfEndBalanceBook, as shown in the above table.
+If the tax lot does not appear in a report during a period, then accued interest is 0 for that period.
 
 
 #### Coupon Payment
