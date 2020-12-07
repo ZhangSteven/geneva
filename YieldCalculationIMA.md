@@ -29,13 +29,34 @@ Realized Return is the sum of the below 3 components:
 
 
 ### Interest Income
-The calculation here applies to new tax lots this year. New tax lots are tax lots that are not in the previous year end's daily interest accrual details report. Tax lots are identified by tax lot IDs (the LotID column). We have
+interest income = sum of interest income of all new tax lots created during the period
 
-interest income of a tax lot during a period = accrued interest of the tax lot at end of the period - accrued interest at beginning of the period + total coupon payment book value during the same period
+A new tax lot created during the period is a tax lot that,
+1. appears in the daily interest accrual details report during the period (*current period report*);
+2. does not appear in daily interest accrual details report with a period end date just one day before the current period (*previous period report*).
+
+For a tax lot,
+
+interest income during the period = accrued interest at current period report - accrued interest at previous period report + coupon payment at current period report
 
 
 #### Accrued Interest
-To get accrued interest of a tax lot on a certain day, use the LotSumOfEndBalanceBook value from the daily interest accrual details report for the tax lot on that day.
+On a certain day, the accrued interest of a tax lot is shown in the LotSumOfEndBalanceBook column of a daily interest accrual details report. The accrued interest of a tax lot during a period is the accrued interest of the tax lot on the last day the tax lot appears during that period.
+
+For example, a tax lot appears like this in the report
+
+Day | LotSumOfEndBalanceBook
+----|-----------------------
+d1 | v1
+d2 | v2
+...
+d_N | v_N
+... does not appear any more in the remaining days ... |
+
+Then accrued interest of the tax lot is v_N.
+
+If the tax lot does not appear in a report during some period, then accued interest is 0 for that period.
+
 
 Item | Value
 -----|------
@@ -48,51 +69,43 @@ Note that if we want 2020-01-01 as the start date and 2020-06-30 and the end dat
 
 
 #### Coupon Payment
-Here is an example to illustrate how to compute coupon payment for a tax lot on a certain date.
+Coupon payment of a tax lot during a period = sum of coupon received by the tax lot during the period
 
-For USM8220VAA28 HTM, it pays coupon on Feb 29th. From the daily interest accrual details report, coupon payment events have LotQuantity = 0, with LotSumOfChangeInAIBook column as coupon payment amount in book currency. Then on Feb 29th, there may be one or more coupon payment entries for this bond, define
+A bond can receive zero or more coupon payments during a period, similar for a tax lot. When a coupon payment happens, there will be one or more lines with column LotQuantity = 0 in the daily interest accrual details report, with LotSumOfChangeInAIBook column as the book amount of the coupon payment.
 
-total coupon payment on that day = sum of LotSumOfChangeInAIBook
+Here is an example to illustrate how to compute coupon received by a tax lot when a coupon payment happens.
 
-Then, on Feb 29th, each tax lot of USM8220VAA28 HTM has:
+For example USM8220VAA28 HTM, it pays coupon on Feb 29th. On that day, there could be one or more coupon payment entries for this bond, then
 
-coupon payment for the tax lot on the day = pro-rata share of total coupon payment of the tax lot
+coupon payment amount on that day = sum of LotSumOfChangeInAIBook of all coupon payment lines for the bond
+
+Then,
+
+coupon received by a tax lot of the bond on that day = pro-rata share of total coupon payment of the tax lot
 
 For example,
 
-Item | Quantity | Amount
+Item | Quantity | Coupon Amount
 -----|----------|-------
 Total Coupon | N/A | 12,000
 Tax Lot 1 | 1,000 | 2,000
 Tax Lot 2 | 2,000 | 4,000
 Tax Lot 3 | 3,000 | 6,000
 
-Then,
-
-total coupon payment for a tax lot during a period = sum of coupon payment for the tax lot when payment dates fall into the period
-
-
 
 ### Realized G/L
 Realized G/L = realized price G/L + realized FX G/L + realized cross from the profit loss report.
 
-Positions include two types:
+enable tax lot details when generating a profit loss report, then we can get G/L numbers for a tax lot.
 
-1. Sales of newly established positions (?tax lots) within the period;
-2. Maturity events.
+Two types of:
 
-
-### Points
-Instead of looking for newly established positions, is it a better idea to do this:
-
-1. Find out all securities that have purchases within the period;
-2. Do a delta of realized G/L between two profit loss reports (one: 2019-01-01 to now, 2020-01-01 to now) for all positions in (1)?
+1. Sales of new tax lots during the period, except for sale trades due to interfund transfers;
+2. Maturity events of new tax lots during the period.
 
 
 #### Interfund transfers
-Interfund transfers should not be included in the realized G/L calculation. 
-
-Interfund transfers appear as buy/sell trades. We should ignore them in realized G/L calculation.
+An interfund transfer means transfering a bond from one portfolio to another in the same portfolio group. A transfer appears as a pair of buy and sell trades, selling from one portfolio and buying from another. The pair of trades have the same security, same trade date/settlement date, same quantity and same price. The broker of the transfer is not a real world broker, but leave as blank or dummy brokers like "BB".
 
 
 
@@ -106,8 +119,8 @@ Maturity | BookAmount X (report date - cash date)/365 | cash ledger
 
 Sales: we calculate time weighted capital in two cases:
 
-1. Sales not included;
-2. Sales included.
+1. Cash flow due to sales of all bonds included;
+2. Sales not included.
 
 
 ### Early Redemption Trades
