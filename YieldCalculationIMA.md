@@ -74,14 +74,25 @@ total coupon payment for a tax lot during a period = sum of coupon payment for t
 
 
 ### Realized G/L
-For realized G/L (买卖价差) above, is it for all positions or just positions established this year?
+Realized G/L = realized price G/L + realized FX G/L + realized cross from the profit loss report.
+
+Positions include two types:
+
+1. Sales of newly established positions (?tax lots) within the period;
+2. Maturity events.
 
 
+### Points
+Instead of looking for newly established positions, is it a better idea to do this:
 
-## Special Cases
-1. Interfund transfers appear as buy/sell trades. We should ignore them in realized G/L calculation.
+1. Find out all securities that have purchases within the period;
+2. Do a delta of realized G/L between two profit loss reports (one: 2019-01-01 to now, 2020-01-01 to now) for all positions in (1)?
 
-2. How does interfund transfers affect total G/L?
+
+#### Interfund transfers
+Interfund transfers should not be included in the realized G/L calculation. 
+
+Interfund transfers appear as buy/sell trades. We should ignore them in realized G/L calculation.
 
 
 
@@ -91,6 +102,12 @@ Category | Calculation | Report
 ---------|-------------|-------
 Deposit (Withdrawal) | BookAmount X (report date - cash date + 1)/365, withdrawal has negative amount | cash ledger
 Maturity | BookAmount X (report date - cash date)/365 | cash ledger
+*Sales* | BookAmount X (report date - settle date)/365 | cash ledger
+
+Sales: we calculate time weighted capital in two cases:
+
+1. Sales not included;
+2. Sales included.
 
 
 ### Early Redemption Trades
@@ -99,13 +116,10 @@ Early redemptions (bond call) are booked as bond sales in Geneva. We need to tre
 
 
 ## Total Return (综合收益)
+Total Return = Realized Return + Fair Value Change (公允价值变动损益)
 
-Component | Columns | Calculation | Report
-----------|---------|-------------|-------
-Fair Value Change (公允价值变动损益) | unrealized price G/L, unrealized FX G/L, unrealized cross | add, for all AFS positions | profit loss
+where,
 
-Total Return = Realized Return of the same period + Fair Value Change
+Fair Value Change = unrealized price G/L + unrealized FX G/L + unrealized cross
 
-
-
-
+for newly established non-HTM positions within the period, data is from profit loss report.
