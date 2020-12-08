@@ -31,13 +31,17 @@ Realized Return is the sum of the below 3 components:
 ### Interest Income
 interest income = sum of interest income of new tax lots created during a period
 
-A new tax lot created during a period is a tax lot that,
-1. appears in the daily interest accrual details report during a period (*current period report*);
-2. does not appear in daily interest accrual details report (*previous period report*) with a period end date just one day before the start date of the current period.
+A new tax lot is a tax lot that appears in the current period report but does not appear in the previous period report (see below).
 
-For a tax lot,
 
-interest income during current period = accrued interest at current period report - accrued interest at previous period report + coupon payment at current period report
+#### Interest Income of a Tax Lot
+To calculate interest income per tax lot, we need two inputs:
+
+1. daily interest accrual details report during a period (*current period report*);
+
+2. daily interest accrual details report (*previous period report*) with a period end date just one day before the start date of the current period report.
+
+interest income of a tax lot = accrued interest at current period report - accrued interest at previous period report + coupon payment at current period report
 
 
 #### Accrued Interest
@@ -91,7 +95,7 @@ enable tax lot details when generating a profit loss report, then we can get G/L
 Two types of:
 
 1. Sales of new tax lots during the period, except for sale trades due to interfund transfers;
-2. Maturity events of new tax lots during the period.
+2. Maturity or paydown events of new tax lots during the period.
 
 
 #### Interfund transfers
@@ -105,6 +109,7 @@ Category | Calculation | Report
 ---------|-------------|-------
 Deposit (Withdrawal) | BookAmount X (report date - cash date + 1)/365, withdrawal has negative amount | cash ledger
 Maturity | BookAmount X (report date - cash date)/365 | cash ledger
+Paydown | BookAmount X (report date - cash date)/365 | cash ledger
 *Sales* | BookAmount X (report date - settle date)/365 | cash ledger
 
 Sales: we calculate time weighted capital in two cases:
