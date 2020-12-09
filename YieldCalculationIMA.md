@@ -39,7 +39,7 @@ To calculate interest income per tax lot, we need two inputs:
 
 1. daily interest accrual details report during a period (*current period report*);
 
-2. daily interest accrual details report (*previous period report*) with a period end date just one day before the start date of the current period report.
+2. daily interest accrual details report with a period end date just one day before the start date of the current period report (*previous period report*).
 
 interest income of a tax lot = accrued interest at current period report - accrued interest at previous period report + coupon payment at current period report
 
@@ -67,24 +67,7 @@ Coupon payment of a tax lot during a period = sum of coupon received by the tax 
 
 A bond can receive zero or more coupon payments during a period, similar for a tax lot. When a coupon payment happens, there will be one or more lines with column LotQuantity = 0 in the daily interest accrual details report, with LotSumOfChangeInAIBook column as the book amount of the coupon payment.
 
-Here is an example to illustrate how to compute coupon received by a tax lot when a coupon payment happens.
-
-For example USM8220VAA28 HTM, it pays coupon on Feb 29th. On that day, there could be one or more coupon payment entries for this bond, then
-
-coupon payment amount on that day = sum of LotSumOfChangeInAIBook of all coupon payment lines for the bond
-
-Then,
-
-coupon received by a tax lot of the bond on that day = pro-rata share of total coupon payment of the tax lot
-
-For example,
-
-Item | Quantity | Coupon Amount
------|----------|-------
-Total Coupon | N/A | 12,000
-Tax Lot 1 | 1,000 | 2,000
-Tax Lot 2 | 2,000 | 4,000
-Tax Lot 3 | 3,000 | 6,000
+Refer to Calculate tax lot interest income from daily interest accruals.xlsx for more details.
 
 
 ### Realized G/L
