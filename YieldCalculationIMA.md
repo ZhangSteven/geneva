@@ -108,14 +108,12 @@ An interfund transfer means transfering a bond from one portfolio to another in 
 Category | Calculation | Report
 ---------|-------------|-------
 Deposit (Withdrawal) | BookAmount X (report date - cash date + 1)/365, withdrawal has negative amount | cash ledger
-Maturity | BookAmount X (report date - cash date)/365 | cash ledger
-Paydown | BookAmount X (report date - cash date)/365 | cash ledger
+Maturity (Paydown) | BookAmount X (report date - cash date)/365 | cash ledger
 *Sales* | BookAmount X (report date - settle date)/365 | cash ledger
 
-Sales: we calculate time weighted capital in two cases:
-
-1. Cash flow due to sales of all bonds included;
-2. Sales not included.
+Time weighted capital will be calculated in two scenarios:
+1. Including cash flow from sales of any position;
+2. Excluding such cash flow.
 
 
 ### Early Redemption Trades
