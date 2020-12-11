@@ -3,11 +3,12 @@
 # Calculate yield (IMA)
 # 
 
-from geneva.report import readCashLedgerTxtReport
-from utils.utility import allEquals, writeCsv
+from geneva.report import readCashLedgerTxtReport \
+						, readDailyInterestAccrualDetailTxtReport
+from clamc_yield_report.ima import getTaxlotInterestIncome
 from utils.file import getFiles
 from toolz.functoolz import compose
-from itertools import accumulate, count, chain
+from itertools import accumulate
 from functools import partial
 from os.path import join
 from datetime import datetime
@@ -19,6 +20,26 @@ logger = logging.getLogger(__name__)
 # 2. get list (period end date, positions)
 # 3. sort by period end date;
 # 4. getAccumulatedTimeWeightedCapital()
+
+
+
+def getAccumulatedInterestIncome(sortedDailyInterestPositions):
+	"""
+	[Iterable] sortedDailyInterestPositions
+	=> [Iterable] ([Dictionary] String -> Float)
+
+	sortedDailyInterestPositions contains posiitons of daily
+	interest accrual detail report, where the first element is
+	positions of month 1, second element being positions of
+	month 2, etc.
+	"""
+	return accumulate( map( getTaxlotInterestIncome
+						  , sortedDailyInterestPositions)
+					 , lambda d1, d2: \
+					 	{ key: d1.get(key, 0) + d2.get(key, 0) \
+					 	 	for key in set(d1.keys()).union(set(d2.keys()))
+					 	})
+
 
 
 def getAccumulatedTimeWeightedCapital(sortedCLPositions):

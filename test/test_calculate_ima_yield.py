@@ -3,9 +3,11 @@
 
 import unittest2
 from geneva.report import readProfitLossTxtReport, getCurrentDirectory \
-						, readCashLedgerTxtReport
+						, readCashLedgerTxtReport \
+						, readDailyInterestAccrualDetailTxtReport
 from geneva.calculate_ima_yield import getTimeWeightedCapital \
-						, getAccumulatedTimeWeightedCapital
+						, getAccumulatedTimeWeightedCapital \
+						, getAccumulatedInterestIncome
 from toolz.functoolz import compose
 from functools import partial
 from itertools import accumulate
@@ -50,6 +52,26 @@ class TestCalculateIMAYield(unittest2.TestCase):
 	# 	self.assertEqual(2, len(L))
 	# 	self.assertAlmostEqual(186332788.70, L[0], 2)
 	# 	self.assertAlmostEqual(668166522.94, L[1], 2)
+
+
+	def testGetAccumulatedInterestIncome(self):
+		files = \
+			[ join(getCurrentDirectory(), 'samples', 'daily interest 2020-01.txt')
+			, join(getCurrentDirectory(), 'samples', 'daily interest 2020-02.txt')
+			, join(getCurrentDirectory(), 'samples', 'daily interest 2020-03.txt')
+			]
+
+		totalInterestIncome = compose(
+			list
+		  , partial(map, lambda d: sum(d.values()))
+		  , getAccumulatedInterestIncome
+		  , partial(map, lambda t: list(t[0]))
+		  , partial(map, partial(readDailyInterestAccrualDetailTxtReport, 'utf-16', '\t'))
+		)(files)
+
+		self.assertAlmostEqual( 790089428.94, totalInterestIncome[0], 2)
+		self.assertAlmostEqual(1525060674.65, totalInterestIncome[1], 2)
+		self.assertAlmostEqual(2312411464.79, totalInterestIncome[2], 2)
 
 
 
