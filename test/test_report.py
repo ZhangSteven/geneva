@@ -4,7 +4,8 @@
 import unittest2
 from geneva.report import getCurrentDirectory, readExcelReport, readTxtReport \
 						, readTaxlotTxtReport, readInvestmentTxtReport \
-						, readProfitLossTxtReport, readCashLedgerTxtReport
+						, readProfitLossTxtReport, readCashLedgerTxtReport \
+						, readDailyInterestAccrualDetailTxtReport
 from os.path import join
 
 
@@ -80,6 +81,18 @@ class TestReport(unittest2.TestCase):
 		positions = list(positions)
 		self.assertEqual(66, len(positions))
 		self.verifyCashLedgerPosition(positions[0])
+
+
+
+	def testReadDailyInterestAccrualDetailTxtReport(self):
+		inputFile = join(getCurrentDirectory(), 'samples', 'daily interest 2020-01.txt')
+		positions, metaData = readDailyInterestAccrualDetailTxtReport(
+								'utf-16', '\t', inputFile)
+		self.verifyMetaData3(metaData)
+
+		positions = list(positions)
+		self.assertEqual(19641, len(positions))
+		self.verifyDailyTaxlotAccrualDetailPosition(positions[2])
 
 
 
@@ -163,3 +176,17 @@ class TestReport(unittest2.TestCase):
 		self.assertEqual(0.93, position['BookAmount'])
 		self.assertEqual(3730.69, position['CurrClosingBalBook'])
 		self.assertEqual('Chinese Renminbi Yuan Closing Balance', position['Currency_ClosingBalDesc'])
+
+
+
+	def verifyDailyTaxlotAccrualDetailPosition(self, position):
+		self.assertEqual('Portfolio (  )', position['PortfolioInfo'])
+		self.assertEqual( 'DE000LB1P2W1 HTM (LBBW 5 02/28/33 EMTN)'
+						, position['Investment'])
+		self.assertEqual('2020-01-02', position['Date'])
+		self.assertEqual(185000000, position['Textbox84'])
+		self.assertEqual('1028327', position['LotID'])
+		self.assertEqual(37000000, position['LotQuantity'])
+		self.assertEqual(5003864.58, position['LotSumOfEndBalanceBook'])
+		self.assertEqual(5138.89, position['LotSumOfChangeAILocal'])
+		self.assertEqual(637222.22, position['LotSumOfBeginBalanceLocal'])

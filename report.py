@@ -356,3 +356,28 @@ readCashLedgerTxtReport = partial(
 	  	}
   	)
 )
+
+
+
+"""
+	[String] encoding, [String] delimiter, [String] file
+		=> [Iterator] positions, [Dictionary] metadata
+"""
+readDailyInterestAccrualDetailTxtReport = partial(
+	readTxtPositionWithUpdateFunction
+  , partial(
+	  	updateDictionaryWithFunction
+	  , { 'Date': updateDate
+	  	, 'Textbox84': updateNumber
+	  	, 'Textbox85': updateNumber
+	  	, 'LotQuantity': updateNumber
+	  	, 'LotSumOfChangeInAI': updateNumber
+	  	, 'LotSumOfBeginBalanceLocal': updateNumber
+	  	, 'LotSumOfChangeAILocal': updateNumber
+	  	, 'LotSumOfPurSoldPaidRecLocal': updateNumber
+	  	, 'LotSumOfEndAccrualBalanceLocal': updateNumber
+	  	, 'LotSumOfChangeInAIBook': updateNumber
+	  	, 'LotSumOfEndBalanceBook': updateNumber
+	  	}
+  	)
+)
