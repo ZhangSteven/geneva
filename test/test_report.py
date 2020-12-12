@@ -5,7 +5,8 @@ import unittest2
 from geneva.report import getCurrentDirectory, readExcelReport, readTxtReport \
 						, readTaxlotTxtReport, readInvestmentTxtReport \
 						, readProfitLossTxtReport, readCashLedgerTxtReport \
-						, readDailyInterestAccrualDetailTxtReport
+						, readDailyInterestAccrualDetailTxtReport \
+						, readProfitLossSummaryWithTaxLotTxtReport
 from os.path import join
 
 
@@ -93,6 +94,20 @@ class TestReport(unittest2.TestCase):
 		positions = list(positions)
 		self.assertEqual(19641, len(positions))
 		self.verifyDailyTaxlotAccrualDetailPosition(positions[2])
+
+
+
+	def testReadProfitLossSummaryWithTaxLotTxtReport(self):
+		inputFile = join(getCurrentDirectory(), 'samples', 'profit loss summary tax lot 2020-01.txt')
+		positions, metaData = readProfitLossSummaryWithTaxLotTxtReport(
+								'utf-16', '\t', inputFile)
+		self.verifyMetaData3(metaData)
+
+		positions = list(positions)
+		self.assertEqual(713, len(positions))
+		self.assertEqual('', positions[0]['TaxLotId'])
+		self.assertEqual('CNY: Chinese Renminbi Yuan', positions[0]['Invest'])
+		self.verifyProfitLossTaxLotPosition(positions[3])
 
 
 
@@ -190,3 +205,15 @@ class TestReport(unittest2.TestCase):
 		self.assertEqual(5003864.58, position['LotSumOfEndBalanceBook'])
 		self.assertEqual(5138.89, position['LotSumOfChangeAILocal'])
 		self.assertEqual(637222.22, position['LotSumOfBeginBalanceLocal'])
+
+
+
+	def verifyProfitLossTaxLotPosition(self, position):
+		self.assertEqual('HK0000337607: CHINAM V5.2 PERP 1', position['Invest'])
+		self.assertEqual(30000000, position['Quantity'])
+		self.assertEqual(-515999.99, position['UnrealizedFXGL'])
+		self.assertEqual(1005108.86, position['CouponDividend'])
+		self.assertEqual('1021948', position['TaxLotId'])
+		self.assertEqual(27000000, position['Qty_taxlot'])
+		self.assertEqual(904597.98, position['Coupon_taxlot'])
+		self.assertEqual(0, position['OtherIncome_taxlot'])

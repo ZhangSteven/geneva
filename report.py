@@ -8,7 +8,7 @@ from toolz.functoolz import compose
 from utils.iter import pop
 from utils.excel import worksheetToLines
 from utils.utility import fromExcelOrdinal
-from itertools import takewhile, groupby
+from itertools import takewhile, groupby, count, dropwhile
 from functools import partial
 from os.path import abspath, dirname
 from datetime import datetime
@@ -151,7 +151,15 @@ getExcelMetadata = lambda metadata: \
 
 
 
-def readTxtReport(encoding, delimiter, file):
+# [String] encoding, [String] filename => [Iterable] lines
+def txtFileToLines(encoding, filename):
+	with codecs.open(filename, 'r', encoding=encoding) as file:
+		for line in file:
+			yield line
+
+
+
+def readTxtReportFromLines(delimiter, lines):
 	"""
 	[String] file => [Iterator] positions, [Dictionary] meta data
 
@@ -163,14 +171,9 @@ def readTxtReport(encoding, delimiter, file):
 
 	This function is to read "Text (tab delimited)" format.
 	"""
-	def fileToLines(fn, encoding):
-		with codecs.open(fn, 'r', encoding=encoding) as file:
-			for line in file:
-				yield line
 
-
-	# [String] line, [String] delimeter => [List] values in line
-	stringToList =  compose(
+	# [String] delimeter, [String] line => [List] values in line
+	stringToList = compose(
 		list
 	  , partial(map, lambda s: s.strip())
 	  , lambda delimiter, line: line.strip().split(delimiter)
@@ -181,8 +184,16 @@ def readTxtReport(encoding, delimiter, file):
 		lambda t: (t[0], getTxtMetadata(t[1]))
 	  , readReport
 	  , partial(map, partial(stringToList, delimiter))
-	  , fileToLines
-	)(file, encoding)
+	)(lines)
+
+
+
+"""	
+	[String] encoding, [String] delimiter, [String] filename
+	 => [Iterator] positions, [Dictionary] meta data
+"""
+readTxtReport = lambda encoding, delimiter, file: \
+	readTxtReportFromLines(delimiter, txtFileToLines(encoding, file))
 
 
 
@@ -238,17 +249,14 @@ getTxtMetadata = partial(
 
 
 """
-	[Function] position udpate function ([Dictionary] -> [Dictionary])
-	[String] encoding
-	[String] delimiter
-	[String] file
-		=> [Iterator] positions, [Dictionary] metadata
+	[Dictionary] String -> Function,
+	[Tuple] (positions, metadata)
+		=> [Tuple] (positions, metadata)
 """
-readTxtPositionWithUpdateFunction = lambda updateFunc, encoding, delimiter, file: \
-	compose(
-		lambda t: (map(updateFunc, t[0]), t[1])
-	  , readTxtReport
-	)(encoding, delimiter, file)
+updatePositionWithFunctionMap = lambda functionMap, t: \
+	( map(partial(updateDictionaryWithFunction, functionMap), t[0])
+	, t[1]
+	)
 
 
 
@@ -256,11 +264,10 @@ readTxtPositionWithUpdateFunction = lambda updateFunc, encoding, delimiter, file
 	[String] encoding, [String] delimiter, [String] file
 		=> [Iterator] positions, [Dictionary] metadata
 """
-readTaxlotTxtReport = partial(
-	readTxtPositionWithUpdateFunction
-  , partial(
-		updateDictionaryWithFunction
-	  , { 'TaxLotDate': updateDate
+readTaxlotTxtReport = compose(
+	partial( 
+		updatePositionWithFunctionMap
+  	  , { 'TaxLotDate': updateDate
 		, 'Quantity': updateNumber
 		, 'OriginalFace': updateNumber
 		, 'UnitCost': updateNumber
@@ -272,7 +279,8 @@ readTaxlotTxtReport = partial(
 		, 'AccruedAmortBook': updateNumber
 		, 'AccruedInterestBook': updateNumber
 		}
-	)
+	) 
+  , readTxtReport
 )
 
 
@@ -281,10 +289,9 @@ readTaxlotTxtReport = partial(
 	[String] encoding, [String] delimiter, [String] file
 		=> [Iterator] positions, [Dictionary] metadata
 """
-readInvestmentTxtReport = partial(
-	readTxtPositionWithUpdateFunction
-  , partial(
-		updateDictionaryWithFunction
+readInvestmentTxtReport = compose(
+	partial(
+		updatePositionWithFunctionMap
 	  , { 'Quantity': updateNumber
 	    , 'LocalPrice': updateNumber
 	    , 'CostLocal': updateNumber
@@ -295,6 +302,7 @@ readInvestmentTxtReport = partial(
 	    , 'Invest': numberFromPercentString
 	  	}
 	)
+  , readTxtReport
 )
 
 
@@ -303,10 +311,9 @@ readInvestmentTxtReport = partial(
 	[String] encoding, [String] delimiter, [String] file
 		=> [Iterator] positions, [Dictionary] metadata
 """
-readProfitLossTxtReport = partial(
-	readTxtPositionWithUpdateFunction
-  , partial(
-	  	updateDictionaryWithFunction
+readProfitLossTxtReport = compose(
+	partial(
+	  	updatePositionWithFunctionMap
 	  , { 'EndingQuantity': updateNumber
 	  	, 'BeginningLocalPrice': updateNumber
 	  	, 'Cost': updateNumber
@@ -324,6 +331,7 @@ readProfitLossTxtReport = partial(
 	  	, 'RealizedCross': updateNumber
 	  	}
   	)
+  , readTxtReport
 )
 
 
@@ -332,10 +340,9 @@ readProfitLossTxtReport = partial(
 	[String] encoding, [String] delimiter, [String] file
 		=> [Iterator] positions, [Dictionary] metadata
 """
-readCashLedgerTxtReport = partial(
-	readTxtPositionWithUpdateFunction
-  , partial(
-	  	updateDictionaryWithFunction
+readCashLedgerTxtReport = compose(
+	partial(
+	  	updatePositionWithFunctionMap
 	  , { 'CurrBegBalLocal': updateNumber
 	  	, 'CurrBegBalBook': updateNumber
 	  	, 'GroupWithinCurrencyBegBalLoc': updateNumber
@@ -355,6 +362,7 @@ readCashLedgerTxtReport = partial(
 	  	, 'SettleDate': updateDate
 	  	}
   	)
+  , readTxtReport
 )
 
 
@@ -363,10 +371,9 @@ readCashLedgerTxtReport = partial(
 	[String] encoding, [String] delimiter, [String] file
 		=> [Iterator] positions, [Dictionary] metadata
 """
-readDailyInterestAccrualDetailTxtReport = partial(
-	readTxtPositionWithUpdateFunction
-  , partial(
-	  	updateDictionaryWithFunction
+readDailyInterestAccrualDetailTxtReport = compose(
+	partial(
+	  	updatePositionWithFunctionMap
 	  , { 'Date': updateDate
 	  	, 'Textbox84': updateNumber
 	  	, 'Textbox85': updateNumber
@@ -380,4 +387,59 @@ readDailyInterestAccrualDetailTxtReport = partial(
 	  	, 'LotSumOfEndBalanceBook': updateNumber
 	  	}
   	)
+  , readTxtReport
 )
+
+
+
+"""
+	[Int] n (n > 0), [Iterable] items
+		=> [Iterable] items after skipping the first n elements
+"""
+skipFirstN = lambda n, items: \
+compose(
+	partial(map, lambda t: t[1])
+  , partial(dropwhile, lambda t: t[0] < n)
+  , partial(zip, count(0))
+)(items)
+
+
+
+"""
+	[String] encoding, [String] delimiter, [String] file
+		=> [Iterator] positions, [Dictionary] metadata
+
+"""
+readProfitLossSummaryWithTaxLotTxtReport = lambda encoding, delimiter, file: \
+compose(
+	partial(
+	  	updatePositionWithFunctionMap
+	  , { 'TaxLotId': lambda s: s if s == '' else s.split(':')[1].strip()
+	  	, 'Quantity': updateNumber
+	  	, 'Cost': updateNumber
+	  	, 'MarketPrice': updateNumber
+	  	, 'MarketValue': updateNumber
+	  	, 'RealizedPriceGL': updateNumber
+	  	, 'RealizedFXGL': updateNumber
+	  	, 'UnrealizedPriceGL': updateNumber
+	  	, 'UnrealizedFXGL': updateNumber
+	  	, 'CouponDividend': updateNumber
+	  	, 'OtherIncome': updateNumber
+	  	, 'TotalGainLoss': updateNumber
+	  	, 'Qty_taxlot': updateNumber
+	  	, 'Cst_taxlot': updateNumber
+	  	, 'MktPriceEnd_taxlot': updateNumber
+	  	, 'MVal_taxlot': updateNumber
+	  	, 'RealGLPrice_taxlot': updateNumber
+	  	, 'RealFX_taxlot': updateNumber
+	  	, 'UnrealGLPrice_taxlot': updateNumber
+	  	, 'UnrealFX_taxlot': updateNumber
+	  	, 'Coupon_taxlot': updateNumber
+	  	, 'OtherIncome_taxlot': updateNumber
+	  	, 'TotalGL_taxlot': updateNumber
+	  	}
+  	)
+  , partial(readTxtReportFromLines, delimiter)
+  , partial(skipFirstN, 3)
+  , partial(txtFileToLines, encoding)
+)(file)
