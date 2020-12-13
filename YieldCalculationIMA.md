@@ -137,3 +137,8 @@ Time weighted capital will be calculated in two scenarios:
 
 ### Early Redemption Trades
 Early redemptions (bond call) are booked as bond sales in Geneva. We need to treat them as bond maturity events.
+
+We can use the trade ticket report to search for TranIDs of early redemption trades that satisfy either of the following conditions:
+
+- The broker (field textbox119) is “Early Redem(Internal Ref.)”, or
+- The broker is empty and the comments (field textbox55) contains things like: early red, early redem or something similar.
