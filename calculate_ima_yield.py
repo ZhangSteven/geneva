@@ -8,7 +8,7 @@ from geneva.report import readCashLedgerTxtReport \
 from clamc_yield_report.ima import getTaxlotInterestIncome
 from utils.file import getFiles
 from toolz.functoolz import compose
-from itertools import accumulate
+from itertools import accumulate, filterfalse
 from functools import partial
 from os.path import join
 from datetime import datetime
@@ -23,22 +23,68 @@ logger = logging.getLogger(__name__)
 
 
 
+"""
+	[Dictionary] d1 (String -> Float)
+	[Dictionary] d2 (String -> Float)
+		=> [Dictionary] d (String -> Float)
+"""
+addDictValues = lambda d1, d2: \
+	{key: d1.get(key, 0) + d2.get(key, 0) for key in set(d1.keys()).union(set(d2.keys()))}
+
+
+
+def getAccumulatedRealizedGainLoss(sortedTaxlotPLpositions):
+	"""
+	[Iterable] sortedTaxlotPLpositions
+	=> [Iterable] ([Dictionary] String -> Float)
+
+	Where sortedTaxlotPLpositions is an iterable over positions from profit 
+	loss summary report with tax lot details, with the first element being
+	positions of month 1, second element being positions of month 2, etc.
+	"""
+	return accumulate( map( getRealizedGainLoss
+						  , sortedTaxlotPLpositions)
+					 , addDictValues)
+
+
+
+def getRealizedGainLoss(taxlotPLpositions):
+	"""
+	[Iterable] taxlotPLpositions => [Dictionary] (String -> Float)
+
+	taxlotPLpositions: positions from profit loss summary report with
+	tax lot details.
+
+	Output a dictionary mapping tax lot Id -> realized gain loss of the
+	tax lot.
+
+	Note cash lots (tax lot id = '') are ignored.
+	"""
+	return \
+	compose(
+		dict
+	  , partial( map
+	  		   , lambda p: ( p['TaxLotId']
+	  					   , p['RealGLPrice_taxlot']+p['RealFX_taxlot'])
+	  		   )
+	  , partial(filterfalse, lambda p: p['TaxLotId'] == '')
+	)(taxlotPLpositions)
+
+
+
 def getAccumulatedInterestIncome(sortedDailyInterestPositions):
 	"""
 	[Iterable] sortedDailyInterestPositions
 	=> [Iterable] ([Dictionary] String -> Float)
 
-	sortedDailyInterestPositions contains posiitons of daily
-	interest accrual detail report, where the first element is
-	positions of month 1, second element being positions of
-	month 2, etc.
+	sortedDailyInterestPositions is an iterable over positons of daily
+	interest accrual detail report, where the first element ispositions 
+	of month 1, second element being positions of month 2, etc.
 	"""
 	return accumulate( map( getTaxlotInterestIncome
 						  , sortedDailyInterestPositions)
-					 , lambda d1, d2: \
-					 	{ key: d1.get(key, 0) + d2.get(key, 0) \
-					 	 	for key in set(d1.keys()).union(set(d2.keys()))
-					 	})
+					 , addDictValues
+					 )
 
 
 
