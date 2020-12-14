@@ -33,6 +33,80 @@ addDictValues = lambda d1, d2: \
 
 
 
+"""
+	[Set] unwanted keys, [Dictionary] d
+		=> [Dictioanry] d without those keys
+"""
+removeKeysFromDict = lambda unwantedKeys, d: \
+	{k: v for (k, v) in d.items() if not k in unwantedKeys}
+
+
+
+def getTaxlotList(dailyInterestPositions):
+	"""
+	[Iterable] dailyInterestPositions => [Set] tax lot Ids in the positions
+	
+	dailyInterestPositions: positions from daily interest report
+	"""
+	return set(map(lambda p: p['LotID'], dailyInterestPositions))
+
+
+
+def getValuesWithoutCertainKeys(unwantedKeys, dictList):
+	"""
+	[Set] unwantedKeys,
+	[Iterable] dictList ([Dictionary] String -> Float)
+		=> [Iterable] (Float)
+	"""
+	return \
+	compose(
+		partial(map, lambda d: sum(d.values()))
+	  , partial(map, partial(removeKeysFromDict, unwantedKeys))
+	)(dictList)
+
+
+
+def getAccumulatedFairValueChange(sortedTaxlotPLpositions):
+	"""
+	[Iterable] sortedTaxlotPLpositions
+	=> [Iterable] ([Dictionary] String -> Float)
+
+	Where sortedTaxlotPLpositions is an iterable over positions from profit 
+	loss summary report with tax lot details, with the first element being
+	positions of month 1, second element being positions of month 2, etc.
+	"""
+	return accumulate( map( getFairValueChange
+						  , sortedTaxlotPLpositions)
+					 , addDictValues)
+
+
+
+def getFairValueChange(taxlotPLpositions):
+	"""
+	[Iterable] sortedTaxlotPLpositions
+	=> [Iterable] ([Dictionary] String -> Float)
+
+	taxlotPLpositions: positions from profit loss summary report with
+	tax lot details.
+
+	Output a dictionary mapping tax lot Id -> unrealized gain loss of the
+	tax lot.
+
+	Note cash lots (tax lot id = '') are ignored.
+	"""
+	return \
+	compose(
+		dict
+	  , partial( map
+	  		   , lambda p: ( p['TaxLotId']
+	  					   , p['UnrealGLPrice_taxlot']+p['UnrealFX_taxlot'])
+	  		   )
+	  , partial( filter
+	  		   , lambda p: 'Bond' in p['Group1'] and not p['Group2'] == 'Held to Maturity')
+	)(taxlotPLpositions)
+
+
+
 def getAccumulatedRealizedGainLoss(sortedTaxlotPLpositions):
 	"""
 	[Iterable] sortedTaxlotPLpositions

@@ -9,7 +9,8 @@ from geneva.report import readProfitLossTxtReport, getCurrentDirectory \
 from geneva.calculate_ima_yield import getTimeWeightedCapital \
 						, getAccumulatedTimeWeightedCapital \
 						, getAccumulatedInterestIncome, getRealizedGainLoss \
-						, getAccumulatedRealizedGainLoss
+						, getAccumulatedRealizedGainLoss, getFairValueChange \
+						, getAccumulatedFairValueChange
 from toolz.functoolz import compose
 from functools import partial
 from itertools import accumulate
@@ -141,3 +142,38 @@ class TestCalculateIMAYield(unittest2.TestCase):
 		self.assertEqual(2, len(values))
 		self.assertAlmostEqual(5011429.88, values[0])
 		self.assertAlmostEqual(5011429.88 + 8483828.71, values[1])
+
+
+
+	def testGetFairValueChange(self):
+		file = join(getCurrentDirectory(), 'samples', 'profit loss summary tax lot 2020-01.txt')
+		self.assertAlmostEqual( 
+			8071778.13
+		  , compose(
+		  		lambda d: sum(d.values())
+		  	  , getFairValueChange
+		 	  , lambda t: t[0]
+		  	  , partial(readProfitLossSummaryWithTaxLotTxtReport, 'utf-16', '\t')
+			)(file)
+		  , 2
+		)
+
+
+
+	def testGetAccumulatedFairValueChange(self):
+		files = [ join(getCurrentDirectory(), 'samples', 'profit loss summary tax lot 2020-01.txt')
+				, join(getCurrentDirectory(), 'samples', 'profit loss summary tax lot 2020-02.txt')
+				]
+
+		values = compose(
+			list
+		  , partial(map, lambda d: sum(d.values()))
+		  , getAccumulatedFairValueChange
+		  , partial(map, lambda t: t[0])
+		  , partial( map
+				   , partial(readProfitLossSummaryWithTaxLotTxtReport, 'utf-16', '\t'))
+		)(files)
+
+		self.assertEqual(2, len(values))
+		self.assertAlmostEqual(8071778.13, values[0])
+		self.assertAlmostEqual(8071778.13 - 6700947.29, values[1])
