@@ -66,15 +66,14 @@ class TestCalculateIMAYield(unittest2.TestCase):
 
 		totalInterestIncome = compose(
 			list
-		  , partial(map, lambda d: sum(d.values()))
-		  , getAccumulatedInterestIncome
+		  , partial(getAccumulatedInterestIncome, set())
 		  , partial(map, lambda t: list(t[0]))
 		  , partial(map, partial(readDailyInterestAccrualDetailTxtReport, 'utf-16', '\t'))
 		)(files)
 
-		# self.assertAlmostEqual( 790089428.94, totalInterestIncome[0], 2)
-		# self.assertAlmostEqual(1525060674.65, totalInterestIncome[1], 2)
-		# self.assertAlmostEqual(2312411464.79, totalInterestIncome[2], 2)
+		self.assertAlmostEqual( 811088743.30, totalInterestIncome[0], 2)
+		self.assertAlmostEqual(1566743855.37, totalInterestIncome[1], 2)
+		self.assertAlmostEqual(2375097673.68, totalInterestIncome[2], 2)
 
 
 
@@ -132,8 +131,7 @@ class TestCalculateIMAYield(unittest2.TestCase):
 
 		values = compose(
 			list
-		  , partial(map, lambda d: sum(d.values()))
-		  , getAccumulatedRealizedGainLoss
+		  , partial(getAccumulatedRealizedGainLoss, set())
 		  , partial(map, lambda t: t[0])
 		  , partial( map
 				   , partial(readProfitLossSummaryWithTaxLotTxtReport, 'utf-16', '\t'))
@@ -167,8 +165,7 @@ class TestCalculateIMAYield(unittest2.TestCase):
 
 		values = compose(
 			list
-		  , partial(map, lambda d: sum(d.values()))
-		  , getAccumulatedFairValueChange
+		  , partial(getAccumulatedFairValueChange, set())
 		  , partial(map, lambda t: t[0])
 		  , partial( map
 				   , partial(readProfitLossSummaryWithTaxLotTxtReport, 'utf-16', '\t'))

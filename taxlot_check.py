@@ -1,6 +1,8 @@
 # coding=utf-8
 #
-# Cross interest income per tax lot with interest per position.
+# Cross check interest income per tax lot from daily interest accrual
+# detail report with interest income per position from profit loss
+# report.
 # 
 
 from geneva.report import readProfitLossTxtReport \
@@ -17,13 +19,6 @@ from os.path import join
 from datetime import datetime
 import logging
 logger = logging.getLogger(__name__)
-
-
-# 1. Get [Dictioanry] investId -> interest income; take out those without interest income (zero coupon etc.)
-# 2. Get [Dictionary] investId -> [List] tax lot id; take out those event id.
-# 3. Get [Dictionary] tax lot id -> [Float] interest income; take out those without interest income (events)
-# 4. From (2), (3) calculate [Dictionary] investId -> interest income;
-# 5. Produce csv: investId, interest income (1), interest income (4), tax lot ids.
 
 
 
@@ -103,26 +98,14 @@ if __name__ == '__main__':
 	import logging.config
 	logging.config.fileConfig('logging.config', disable_existing_loggers=False)
 
-	# profitLossFile = join('samples', 'profit loss 2020-01.txt')
-	# print(list(getInterestIncomeFromPL(profitLossFile)))
-
-	# taxlotInterestIncomeFile = join('samples', 'tax_lot_id_2020-01.xlsx')
-	# taxLotInterestIncome = getInterestIncomeTaxLot(taxlotInterestIncomeFile)
-	# print(len(taxLotInterestIncome))
-	# print(taxLotInterestIncome)
-
-	# dailyInterestFile = join('samples', 'daily interest 2020-01.txt')
-	# taxlotMapping = getInvestIdTaxlotMapping(dailyInterestFile)
-	# print(taxlotMapping)
-
 	profitLoss = getInterestIncomeFromPL(
-					join('samples', 'profit loss 2020-01.txt'))
+					join('samples', 'profit loss 2020-03.txt'))
 
 	taxLotInterestIncome = getInterestIncomeTaxLot(
-								join('samples', 'tax_lot_id_2020-01.xlsx'))
+								join('samples', 'tax_lot_id_2020-03.xlsx'))
 
 	taxlotMapping = getInvestIdTaxlotMapping(
-						join('samples', 'daily interest 2020-01.txt'))
+						join('samples', 'daily interest 2020-03.txt'))
 
 	sumTaxlotInterestIncome = lambda taxlotMapping, taxLotInterestIncome, investId: \
 	compose(

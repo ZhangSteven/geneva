@@ -16,12 +16,6 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-# 1. get list of CL files;
-# 2. get list (period end date, positions)
-# 3. sort by period end date;
-# 4. getAccumulatedTimeWeightedCapital()
-
-
 
 """
 	[Dictionary] d1 (String -> Float)
@@ -42,42 +36,26 @@ removeKeysFromDict = lambda unwantedKeys, d: \
 
 
 
-def getTaxlotList(dailyInterestPositions):
-	"""
-	[Iterable] dailyInterestPositions => [Set] tax lot Ids in the positions
-	
-	dailyInterestPositions: positions from daily interest report
-	"""
-	return set(map(lambda p: p['LotID'], dailyInterestPositions))
-
-
-
-def getValuesWithoutCertainKeys(unwantedKeys, dictList):
+def getAccumulatedValue(mappingFunc, unwantedKeys, inputList):
 	"""
 	[Set] unwantedKeys,
-	[Iterable] dictList ([Dictionary] String -> Float)
-		=> [Iterable] (Float)
+	[Function] Iterable -> Dictionary
+	[Iterable] an iterable over a list of elements, where elements
+		are positions of from the below reports, from month 1, 2,
+		...n
+
+		1. Profit Loss summary with tax lot details;
+		2. Daily interest accrual detail;
+
+	=> [Iterable] Float 
 	"""
 	return \
 	compose(
 		partial(map, lambda d: sum(d.values()))
+	  , lambda values: accumulate(values, addDictValues)
 	  , partial(map, partial(removeKeysFromDict, unwantedKeys))
-	)(dictList)
-
-
-
-def getAccumulatedFairValueChange(sortedTaxlotPLpositions):
-	"""
-	[Iterable] sortedTaxlotPLpositions
-	=> [Iterable] ([Dictionary] String -> Float)
-
-	Where sortedTaxlotPLpositions is an iterable over positions from profit 
-	loss summary report with tax lot details, with the first element being
-	positions of month 1, second element being positions of month 2, etc.
-	"""
-	return accumulate( map( getFairValueChange
-						  , sortedTaxlotPLpositions)
-					 , addDictValues)
+	  , partial(map, mappingFunc)
+	)(inputList)
 
 
 
@@ -107,18 +85,19 @@ def getFairValueChange(taxlotPLpositions):
 
 
 
-def getAccumulatedRealizedGainLoss(sortedTaxlotPLpositions):
-	"""
+"""
+	[Set] unwanted tax lot Ids
 	[Iterable] sortedTaxlotPLpositions
-	=> [Iterable] ([Dictionary] String -> Float)
+	=> [Iterable] Float
 
 	Where sortedTaxlotPLpositions is an iterable over positions from profit 
 	loss summary report with tax lot details, with the first element being
 	positions of month 1, second element being positions of month 2, etc.
-	"""
-	return accumulate( map( getRealizedGainLoss
-						  , sortedTaxlotPLpositions)
-					 , addDictValues)
+"""
+getAccumulatedFairValueChange = partial(
+	getAccumulatedValue
+  , getFairValueChange
+)
 
 
 
@@ -146,19 +125,35 @@ def getRealizedGainLoss(taxlotPLpositions):
 
 
 
-def getAccumulatedInterestIncome(sortedDailyInterestPositions):
-	"""
+"""
+	[Set] unwanted tax lots,
+	[Iterable] sortedTaxlotPLpositions
+	=> [Iterable] Float
+
+	Where sortedTaxlotPLpositions is an iterable over positions from profit 
+	loss summary report with tax lot details, with the first element being
+	positions of month 1, second element being positions of month 2, etc.
+"""
+getAccumulatedRealizedGainLoss = partial(
+	getAccumulatedValue
+  , getRealizedGainLoss
+)
+
+
+
+"""
+	[Set] unwanted tax lots,
 	[Iterable] sortedDailyInterestPositions
-	=> [Iterable] ([Dictionary] String -> Float)
+	=> [Iterable] Float
 
 	sortedDailyInterestPositions is an iterable over positons of daily
 	interest accrual detail report, where the first element ispositions 
 	of month 1, second element being positions of month 2, etc.
-	"""
-	return accumulate( map( getTaxlotInterestIncome
-						  , sortedDailyInterestPositions)
-					 , addDictValues
-					 )
+"""
+getAccumulatedInterestIncome = partial(
+	getAccumulatedValue
+  , getTaxlotInterestIncome
+)
 
 
 
@@ -227,7 +222,32 @@ def getTimeWeightedCapital(reportDate, positions):
 
 
 
+"""
+	[Configure Object] config 
+		=> [Set] tax lots that belong to CN Energy Bond
+"""
+getCNEnergyTaxlots = lambda config: \
+	set(map(lambda s: s.strip(), config['DefaultBond']['taxlots'].split(',')))
+
+
+
+"""
+	[Iterable] dailyInterestPositions => [Set] tax lot Ids in the positions
+	
+	dailyInterestPositions: positions from daily interest report
+"""
+getTaxlotList = lambda dailyInterestPositions: \
+	set(map(lambda p: p['LotID'], dailyInterestPositions))
+
+
+
 
 if __name__ == '__main__':
 	import logging.config
 	logging.config.fileConfig('logging.config', disable_existing_loggers=False)
+
+	import configparser
+	config = configparser.ConfigParser()
+	config.read('calculate_ima_yield.config')
+
+	print(getCNEnergyTaxlots(config))
