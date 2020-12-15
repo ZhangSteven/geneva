@@ -21,15 +21,15 @@ Return Rate | 收益率 | Return / Time Weighted Capital
 
 
 ## Realized Return (实现投资收益)
-Realized Return is the sum of the below 3 components:
+Realized Return is the sum of two components:
 
-1. Interest income (息类收入) ;
-2. Realized G/L (买卖价差) ;
-3. Fair Value Change (公允价值变动损益) .
-
+1. Interest Income (息类收入) ;
+2. Realized Gain Loss (买卖价差) ;
 
 
-### Interest Income of a Tax Lot
+### Interest Income
+The interest income that matters is the interest income of those bought during the year, i.e., tax lots created this year. To do this, we will use the daily interest accrual detail report to get interest income of tax lots.
+
 In the daily interest accrual detail report, each line is a record of two kinds,
 
 Record Type | Condition | Meaning
@@ -85,20 +85,40 @@ Note that a bond can have interest payment events on multiple days during a peri
 	interest received by a tax lot = sum of interest received by the tax lot from all such events during the period.
 
 
+### Realized Gain Loss
+Similar to interest income, the realized gain loss that matters is of those tax lots that
 
-### Realized G/L
-Realized G/L = realized price G/L + realized FX G/L + realized cross from the profit loss report.
+1. are created this year;
+2. belong to bond positions.
 
-enable tax lot details when generating a profit loss report, then we can get G/L numbers for a tax lot.
+We will use profit loss summary report that
 
-Two types of:
+1. include tax lot details;
+2. with group1 = investmentType, group2 = printGroup.
 
-1. Sales of new tax lots during the period, except for sale trades due to interfund transfers;
-2. Maturity or paydown events of new tax lots during the period.
+Then we have:
+
+	realized gain loss of a tax lot = realized price gain loss + realized FX gain loss
+
+Note that we need to exclude tax lots created due to interfund transfers within the same portfolio group. An interfund transfer means transfering a position from one portfolio to another. A transfer appears as a pair of buy and sell trades, selling from one portfolio and buying from another. The pair of trades share the same security, trade date, settlement date, quantity, and price. The broker of the transfer is not a real world broker, but leave as blank or dummy brokers like "BB".
 
 
-#### Interfund transfers
-An interfund transfer means transfering a bond from one portfolio to another in the same portfolio group. A transfer appears as a pair of buy and sell trades, selling from one portfolio and buying from another. The pair of trades have the same security, same trade date/settlement date, same quantity and same price. The broker of the transfer is not a real world broker, but leave as blank or dummy brokers like "BB".
+
+## Total Return (综合收益)
+For total return, we have
+
+	Total Return = Realized Return + Fair Value Change
+
+
+### Fair Value Change (公允价值变动损益)
+The fair value change means unrealized gain loss of tax lots that
+
+1. are created this year;
+2. belong to AFS bond positions.
+
+Again, we will use the profit loss summary report generated for the realized gain loss. Then we have:
+
+	fair value change = unrealized price gain loss + unrealized FX gain loss
 
 
 
@@ -118,13 +138,7 @@ Time weighted capital will be calculated in two scenarios:
 ### Early Redemption Trades
 Early redemptions (bond call) are booked as bond sales in Geneva. We need to treat them as bond maturity events.
 
+We can use the trade ticket report to search for TranIDs of early redemption trades that satisfy either of the following conditions:
 
-
-## Total Return (综合收益)
-Total Return = Realized Return + Fair Value Change (公允价值变动损益)
-
-where,
-
-Fair Value Change = unrealized price G/L + unrealized FX G/L + unrealized cross
-
-for newly established non-HTM positions within the period, data is from profit loss report.
+- The broker (field textbox119) is “Early Redem(Internal Ref.)”, or
+- The broker is empty and the comments (field textbox55) contains things like: early red, early redem or something similar.
