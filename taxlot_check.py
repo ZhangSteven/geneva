@@ -8,7 +8,7 @@
 from geneva.report import readProfitLossTxtReport \
 						, readDailyInterestAccrualDetailTxtReport \
 						, excelFileToLines, getRawPositions
-# from clamc_yield_report.ima import getTaxlotInterestIncome
+from clamc_yield_report.ima import getTaxlotInterestIncome
 from utils.utility import writeCsv
 from toolz.functoolz import compose
 from toolz.itertoolz import groupby as groupbyToolz
@@ -24,7 +24,7 @@ logger = logging.getLogger(__name__)
 
 def getInterestIncomeFromPL(profitLossFile):
 	"""
-	[String] profitLossFile => [Dictionary] investId -> interest income
+	[String] profitLossFile => [Iterable] (investId, interest income)
 	"""
 
 	# handle special case "XS1505143393 HTM TEST"
@@ -40,33 +40,6 @@ def getInterestIncomeFromPL(profitLossFile):
 	  , lambda t: t[0]
 	  , partial(readProfitLossTxtReport, 'utf-16', '\t')
 	)(profitLossFile)
-
-
-
-def getInterestIncomeTaxLot(taxlotInterestIncomeFile):
-	"""
-	[String] taxlotInterestIncomeFile => [Dictionary] tax lot id -> interest income
-	
-	Excluding tax lot ids whose interest income = 0.
-	"""
-	def updateDict(d):
-		d['tax lot id'] = str(int(d['tax lot id']))
-		return d
-
-
-	return \
-	compose(
-		dict
-	  , partial(filterfalse, lambda t: t[1] == 0)
-	  , partial( map
-	  		   , lambda d: ( d['tax lot id']
-	  		   			   , d['ending ai'] - d['starting ai'] + d['interest received']
-	  		   			   )
-	  		   )
-	  , partial(map, updateDict)
-	  , getRawPositions
-	  , excelFileToLines
-	)(taxlotInterestIncomeFile)
 
 
 
@@ -94,18 +67,17 @@ def getInvestIdTaxlotMapping(dailyInterestFile):
 
 
 
-if __name__ == '__main__':
-	import logging.config
-	logging.config.fileConfig('logging.config', disable_existing_loggers=False)
+def writeComparisonCsv(month):
+	"""
+	[Int] month => [String] csv output
 
-	profitLoss = getInterestIncomeFromPL(
-					join('samples', 'profit loss 2020-03.txt'))
+	Side effect: write csv output file showing the difference between position
+	level interest income and sum of tax lot level interest income.
+	"""
+	toString = lambda x: '0' + str(x) if x < 10 else str(x)
 
-	taxLotInterestIncome = getInterestIncomeTaxLot(
-								join('samples', 'tax_lot_id_2020-03.xlsx'))
-
-	taxlotMapping = getInvestIdTaxlotMapping(
-						join('samples', 'daily interest 2020-03.txt'))
+	profitLossFile = join('samples', 'profit loss 2020-' + toString(month) + '.txt')
+	dailyInterestFile = join('samples', 'daily interest 2020-' + toString(month) + '.txt')
 
 	sumTaxlotInterestIncome = lambda taxlotMapping, taxLotInterestIncome, investId: \
 	compose(
@@ -119,7 +91,11 @@ if __name__ == '__main__':
 		' '.join(taxlotMapping[investId])
 
 
-	outcomeRow = lambda plEntry: \
+	"""
+		[Tuple] (investId, interest income) 
+		=> [Tuple] (investId, interest income, interest income of all tax lots, tax lot list)
+	"""
+	outcomeRow = lambda taxlotMapping, taxLotInterestIncome, plEntry: \
 		( plEntry[0]
 		, plEntry[1]
 		, sumTaxlotInterestIncome(taxlotMapping, taxLotInterestIncome, plEntry[0])
@@ -127,15 +103,38 @@ if __name__ == '__main__':
 		)
 
 
+	"""
+		[Tuple] (investId, interest income, interest income of all tax lots, tax lot list)
+		=> [Tuple] ( investId, interest income, interest income of all tax lots
+				   , difference between the two, tax lot list)
+	"""
 	addDelta = lambda t: \
 		(t[0], t[1], t[2], t[1]-t[2], t[3])
 
 
-	writeCsv( 'tax lot cross check.csv'
+	return \
+	writeCsv( 'tax lot cross check 2020-' + toString(month) + '.csv'
 			, chain( [('InvestId', 'Interst Income', 'Interest Income Tax Lot', 'Difference', 'Tax Lots')]
-				   , map(addDelta, map(outcomeRow, profitLoss)))
+				   , map( addDelta
+				   		, map( partial( outcomeRow
+				   					  , getInvestIdTaxlotMapping(dailyInterestFile)
+				   					  , getTaxlotInterestIncome(
+											list(readDailyInterestAccrualDetailTxtReport(
+													'utf-16', '\t', dailyInterestFile)[0]))
+				   					  )
+				   			 , getInterestIncomeFromPL(profitLossFile)))
+				   )
 			, delimiter=','
 			)
 
 
 
+
+if __name__ == '__main__':
+	import logging.config
+	logging.config.fileConfig('logging.config', disable_existing_loggers=False)
+
+	# for n in range(1, 11):
+	# 	print(writeComparisonCsv(n))
+
+	writeComparisonCsv(9)	# error
