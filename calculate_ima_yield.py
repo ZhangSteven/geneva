@@ -412,6 +412,7 @@ if __name__ == '__main__':
 	)(config)
 
 
+	# Generate the csv
 	addValues = lambda d: sum(d.values())
 	compose(
 		partial(writeCsv, 'ima result.csv')
@@ -423,3 +424,13 @@ if __name__ == '__main__':
 	  			   , accumulatedFairValueChange
 	  			   , timeWeightedCapital)
 	)()
+
+	# Generate the tax lot ids in 2020 Nov accumulated interest
+	# income.
+	# 
+	# compose(
+	# 	partial(writeCsv, '2020 Nov tax lots.csv')
+	#   , partial(chain, [('tax lot id', 'interest income')])
+	#   , partial(filterfalse, lambda t: t[1] == 0)
+	#   , lambda L: L[10].items()
+	# )(accumulatedInterestIncome)
