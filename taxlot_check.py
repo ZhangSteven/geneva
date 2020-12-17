@@ -134,7 +134,7 @@ if __name__ == '__main__':
 	import logging.config
 	logging.config.fileConfig('logging.config', disable_existing_loggers=False)
 
-	for n in range(1, 12):
-		print(writeComparisonCsv(n))
+	# for n in range(1, 12):
+	# 	print(writeComparisonCsv(n))
 
-	# writeComparisonCsv(9)	# error
+	writeComparisonCsv(8)	# error

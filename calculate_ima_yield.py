@@ -11,7 +11,7 @@ from clamc_yield_report.ima import getTaxlotInterestIncome
 from utils.file import getFiles
 from utils.utility import writeCsv
 from toolz.functoolz import compose
-from itertools import accumulate, filterfalse, chain
+from itertools import accumulate, filterfalse, chain, count
 from functools import partial
 from os.path import join
 from datetime import datetime
@@ -314,6 +314,48 @@ getFilesWithFilterFunc(
 
 
 
+def adjustInterestIncome(accumulatedInterestIncome):
+	"""
+	[Iterable] accumulated interest income (since month 1)
+	=> [Iterable] accumulated interest income (since month 1)
+
+	The point is to make interest income adjustment for the below
+	tax lots on and after month 8:
+
+	Lot 	 Adjustment
+	1075473	 (1,555,402.64)
+	1117941	 (408,489.58)
+	1117942	 (691,290.07)
+	1118109	 (408,489.58)
+	1118110	 (408,489.58)
+
+	"""
+	adjustment = { '1075473': -1555402.64
+				 , '1117941': -408489.58
+				 , '1117942': -691290.07
+				 , '1118109': -408489.58
+				 , '1118110': -408489.58
+				 }
+
+	# [Dictionary] tax lot id => interest income => [Dictionary] id -> income
+	adjustDict = compose(
+		dict
+	  , partial( map
+	  		   , lambda t: (t[0], t[1] + adjustment[t[0]]) \
+	  		   		if t[0] in adjustment else t
+	  		   )
+	  , lambda d: d.items()
+	)
+
+
+	return \
+	compose(
+		partial(map, lambda t: adjustDict(t[1]) if t[0] > 7 else t[1])
+	  , partial(zip, count(1))
+	)(accumulatedInterestIncome)
+
+
+
 
 if __name__ == '__main__':
 	import logging.config
@@ -355,6 +397,7 @@ if __name__ == '__main__':
 
 	accumulatedInterestIncome = compose(
 		list
+	  , adjustInterestIncome
 	  , partial(getAccumulatedInterestIncome, unwantedTaxLots)
 	)(sortedDailyInterestPositions)
 
@@ -373,7 +416,7 @@ if __name__ == '__main__':
 	compose(
 		partial(writeCsv, 'ima result.csv')
 	  , partial(chain, [('interest income', 'realized gain', 'fair value change', 'time weighted capital')])
-	  , partial( map 
+	  , partial( map
 	  		   , lambda t: (addValues(t[0]), addValues(t[1]), addValues(t[2]), t[3]))
 	  , lambda: zip( accumulatedInterestIncome
 	  			   , accumulatedRealizedGL
