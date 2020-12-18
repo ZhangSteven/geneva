@@ -5,14 +5,15 @@
 
 from geneva.report import readCashLedgerTxtReport, readTaxlotTxtReport \
 						, readDailyInterestAccrualDetailTxtReport \
-						, readProfitLossSummaryWithTaxLotTxtReport
+						, readProfitLossSummaryWithTaxLotTxtReport \
+						, readTxtReport
 from geneva.calculate_yield import getFilesWithFilterFunc
 from clamc_yield_report.ima import getTaxlotInterestIncome
 from utils.file import getFiles
 from utils.utility import writeCsv
 from toolz.functoolz import compose
 from itertools import accumulate, filterfalse, chain, count
-from functools import partial
+from functools import partial, reduce
 from os.path import join
 from datetime import datetime
 import logging
@@ -34,14 +35,23 @@ addDictValues = lambda d1, d2: \
 	[Set] unwanted keys, [Dictionary] d
 		=> [Dictioanry] d without those keys
 """
-removeKeysFromDict = lambda unwantedKeys, d: \
-	{k: v for (k, v) in d.items() if not k in unwantedKeys}
+# removeKeysFromDict = lambda unwantedKeys, d: \
+# 	{k: v for (k, v) in d.items() if not k in unwantedKeys}
 
 
 
-def getAccumulatedValue(mappingFunc, unwantedKeys, inputList):
+"""
+	[Set] unwanted keys, [Dictionary] d
+		=> [Dictioanry] d without those keys
+"""
+keepKeysFromDict = lambda wantedKeys, d: \
+	{k: v for (k, v) in d.items() if k in wantedKeys}
+
+
+
+def getAccumulatedValue(mappingFunc, wantedKeys, inputList):
 	"""
-	[Set] ([String] unwantedKeys),
+	[Set] ([String] wantedKeys),
 	[Function] Iterable -> [Dictionary] [String] key -> [Float] value
 	[Iterable] inputList, whose elements are positions of from the 
 		below reports, from month 1, 2...n
@@ -50,13 +60,20 @@ def getAccumulatedValue(mappingFunc, unwantedKeys, inputList):
 		2. Daily interest accrual detail;
 
 	=> [Iterable] ([Dictionary] key -> value)
+
+	if wantedKeys parameter is None, then no filtering is done.
 	"""
 	return \
 	compose(
 		lambda values: accumulate(values, addDictValues)
-	  , partial(map, partial(removeKeysFromDict, unwantedKeys))
+	  , partial(map, partial(keepKeysFromDict, wantedKeys))
 	  , partial(map, mappingFunc)
-	)(inputList)
+	)(inputList) \
+	if wantedKeys != None else \
+	compose(
+		lambda values: accumulate(values, addDictValues)
+	  , partial(map, mappingFunc)
+	)(inputList)	
 
 
 
@@ -197,7 +214,7 @@ def getTimeWeightedCapital(reportDate, positions):
 		sum
 	  , partial( map
 	  		   , lambda p: p['BookAmount'] * getDaysDifference(p['CashDate'], reportDate)/365.0)
-	  , partial(filter, lambda p: p['TranDescription'] == 'Mature')
+	  , partial(filter, lambda p: p['TranDescription'] in ['Mature', 'Paydown', 'Sell'])
 	)(positions)
 
 
@@ -248,15 +265,36 @@ getInputDirectory = lambda config: \
 	Combine tax lot ids (non cash) that appear in the tax lot appraisal
 	report and those from the config object, return them as a set.
 """
-getUnwantedTaxLots = lambda config, lastYearTaxLotAppraisalFile: \
+# getUnwantedTaxLots = lambda config, lastYearTaxLotAppraisalFile: \
+# compose(
+# 	lambda s: getCNEnergyTaxlots(config).union(s)
+#   , set
+#   , partial(filterfalse, lambda el: el == '')
+#   , partial(map, lambda p: p['TaxLotID'])
+#   , lambda t: t[0]
+#   , partial(readTaxlotTxtReport, 'utf-16', '\t')
+# )(lastYearTaxLotAppraisalFile)
+
+
+
+"""
+	[String] purchase sales report
+	=> [Set] tax lot ids
+
+	Get tax lot ids that are bought during a period using a purchase
+	sales report, return them as a set.
+
+	We cannot use cash ledger report to do this, becaue cash ledger
+	does not include unsettled trades.
+"""
+getWantedTaxLots = lambda purchaseSalesFile: \
 compose(
-	lambda s: getCNEnergyTaxlots(config).union(s)
-  , set
-  , partial(filterfalse, lambda el: el == '')
-  , partial(map, lambda p: p['TaxLotID'])
+ 	set
+  , partial(map, lambda p: p['TranID'])
+  , partial(filter, lambda p: p['TranType'] == 'Buy')
   , lambda t: t[0]
-  , partial(readTaxlotTxtReport, 'utf-16', '\t')
-)(lastYearTaxLotAppraisalFile)
+  , partial(readTxtReport, 'utf-16', '\t')
+)(purchaseSalesFile)
 
 
 
@@ -304,12 +342,26 @@ getFilesWithFilterFunc(
 
 
 """
-	[String] directory => [Iterable] profit loss summary files
+	[Configure Object] config => [Iterable] profit loss summary files
 """
 getDailyInterestAccrualFiles = lambda config: \
 getFilesWithFilterFunc(
 	lambda fn: fn.startswith('daily interest') and fn.endswith('.txt')
   , getInputDirectory(config)
+)
+
+
+
+"""
+	[Configure Object] config => [String] purchase sales file
+"""
+getPurchaseSalesFile = compose(
+	lambda m: list(m)[0]
+  , lambda config: \
+		getFilesWithFilterFunc(
+			lambda fn: fn.startswith('purchase sales') and fn.endswith('.txt')
+		  , getInputDirectory(config)
+		)
 )
 
 
@@ -365,25 +417,28 @@ if __name__ == '__main__':
 	config = configparser.ConfigParser()
 	config.read('calculate_ima_yield.config')
 
-	lastYearTaxLotAppraisalFile = join('samples', '12xxx tax lot 2019-12-31.txt')
-	unwantedTaxLots = getUnwantedTaxLots(config, lastYearTaxLotAppraisalFile)
+	# lastYearTaxLotAppraisalFile = join('samples', '12xxx tax lot 2019-12-31.txt')
+	# unwantedTaxLots = getUnwantedTaxLots(config, lastYearTaxLotAppraisalFile)
 	# print(unwantedTaxLots)
+
+	wantedTaxlots = getWantedTaxLots(getPurchaseSalesFile(config))
 
 	sortedPLdata = sorted( map( partial( readProfitLossSummaryWithTaxLotTxtReport
 									   , 'utf-16', '\t')
 							  , getProfitLossSummaryFiles(config))
-						 , key=lambda t: t[1]['PeriodEndDate'])
+						 , key=lambda t: t[1]['PeriodEndDate']
+						 )
 
 	sortedTaxlotPLpositions = list(map(lambda t: list(t[0]), sortedPLdata))
 
 	accumulatedRealizedGL = compose(
 		list
-	  , partial(getAccumulatedRealizedGainLoss, unwantedTaxLots)
+	  , partial(getAccumulatedRealizedGainLoss, wantedTaxlots)
 	)(sortedTaxlotPLpositions)
 
 	accumulatedFairValueChange = compose(
 		list
-	  , partial(getAccumulatedFairValueChange, unwantedTaxLots)
+	  , partial(getAccumulatedFairValueChange, wantedTaxlots)
 	)(sortedTaxlotPLpositions)
 
 
@@ -398,7 +453,7 @@ if __name__ == '__main__':
 	accumulatedInterestIncome = compose(
 		list
 	  , adjustInterestIncome
-	  , partial(getAccumulatedInterestIncome, unwantedTaxLots)
+	  , partial(getAccumulatedInterestIncome, wantedTaxlots)
 	)(sortedDailyInterestPositions)
 
 
@@ -425,12 +480,18 @@ if __name__ == '__main__':
 	  			   , timeWeightedCapital)
 	)()
 
+
 	# Generate the tax lot ids in 2020 Nov accumulated interest
 	# income.
-	# 
 	# compose(
-	# 	partial(writeCsv, '2020 Nov tax lots.csv')
+	# 	partial(writeCsv, '2020 Nov tax lots with interest income.csv')
 	#   , partial(chain, [('tax lot id', 'interest income')])
 	#   , partial(filterfalse, lambda t: t[1] == 0)
 	#   , lambda L: L[10].items()
 	# )(accumulatedInterestIncome)
+
+
+	# Generate the wanted tax lots as of 2020 Nov
+	writeCsv( '2020 Nov tax lots.csv'
+			, chain( [('TaxLotID',)]
+				   , map(lambda s: (s,), wantedTaxlots)))

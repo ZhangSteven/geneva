@@ -20,6 +20,17 @@ Return Rate | 收益率 | Return / Time Weighted Capital
 
 
 
+## Remaining Issues
+
+1. A bond exchange can terminate the old bond position and produce new bond positions. But tax lots created in such a corporate action should not be counted as new tax lots. For example, TEWOOG exchange instruction (XS1268469670 HTM --> XS2182851985 HTM & XS2182852520 HTM) that occurred on 2020-06-12. Tax lot 1010330 eliminated, new tax lots 1125921, 1125922 created.
+
+2. Inaccurate tax lot calculation. 
+	2.1 interest payment event and tax lot receiving payment happened on different days. In the daily interest accrual report, USM8220VAA28 HTM paid interest on 2020-08-30, but tax lots receiving them on 2020-08-31, thus program cannot calculate interest income for the tax lots.
+
+	2.2 sometimes the ending AI is inaccurate in daily interest accrual report, therefore the delta (ending AI - starting AI) is inaccurate.
+
+
+
 ## Realized Return (实现投资收益)
 Realized Return is the sum of two components:
 
@@ -128,11 +139,7 @@ Category | Calculation | Report
 ---------|-------------|-------
 Deposit (Withdrawal) | BookAmount X (report date - cash date + 1)/365, withdrawal has negative amount | cash ledger
 Maturity (Paydown) | BookAmount X (report date - cash date)/365 | cash ledger
-*Sales* | BookAmount X (report date - settle date)/365 | cash ledger
-
-Time weighted capital will be calculated in two scenarios:
-1. Including cash flow from sales of any position;
-2. Excluding such cash flow.
+Sales | BookAmount X (report date - settle date)/365 | cash ledger
 
 
 ### Early Redemption Trades
@@ -142,3 +149,5 @@ We can use the trade ticket report to search for TranIDs of early redemption tra
 
 - The broker (field textbox119) is “Early Redem(Internal Ref.)”, or
 - The broker is empty and the comments (field textbox55) contains things like: early red, early redem or something similar.
+
+Since we include cash flow from all sales transactions, so there is no need to distinguish a normal sales and an early redemption.
