@@ -8,7 +8,8 @@
 from geneva.report import readProfitLossTxtReport \
 						, readDailyInterestAccrualDetailTxtReport \
 						, excelFileToLines, getRawPositions
-from clamc_yield_report.ima import getTaxlotInterestIncome
+# from clamc_yield_report.ima import getTaxlotInterestIncome
+from geneva.calculate_ima_yield import getTaxlotInterestIncome
 from utils.utility import writeCsv
 from toolz.functoolz import compose
 from toolz.itertoolz import groupby as groupbyToolz
@@ -19,6 +20,15 @@ from os.path import join
 from datetime import datetime
 import logging
 logger = logging.getLogger(__name__)
+
+
+
+"""
+	[Set] unwanted keys, [Dictionary] d
+		=> [Dictioanry] d without those keys
+"""
+# removeKeysFromDict = lambda unwantedKeys, d: \
+# 	{k: v for (k, v) in d.items() if not k in unwantedKeys}
 
 
 
@@ -122,7 +132,10 @@ def writeComparisonCsv(month):
 											list(readDailyInterestAccrualDetailTxtReport(
 													'utf-16', '\t', dailyInterestFile)[0]))
 				   					  )
-				   			 , getInterestIncomeFromPL(profitLossFile)))
+				   		
+				   			 , filterfalse( lambda t: t[0] in ('HK0000241288 HTM', 'XS1376566714 HTM')	# get rid of CERCG
+				   			 	  		  , getInterestIncomeFromPL(profitLossFile)))
+				   		)
 				   )
 			, delimiter=','
 			)
@@ -134,7 +147,5 @@ if __name__ == '__main__':
 	import logging.config
 	logging.config.fileConfig('logging.config', disable_existing_loggers=False)
 
-	# for n in range(1, 12):
-	# 	print(writeComparisonCsv(n))
-
-	writeComparisonCsv(8)	# error
+	for n in range(1, 12):
+		print(writeComparisonCsv(n))

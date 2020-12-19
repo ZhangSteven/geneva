@@ -8,10 +8,12 @@ from geneva.report import readCashLedgerTxtReport, readTaxlotTxtReport \
 						, readProfitLossSummaryWithTaxLotTxtReport \
 						, readTxtReport
 from geneva.calculate_yield import getFilesWithFilterFunc
-from clamc_yield_report.ima import getTaxlotInterestIncome
+# from clamc_yield_report.ima import getTaxlotInterestIncome
 from utils.file import getFiles
 from utils.utility import writeCsv
 from toolz.functoolz import compose
+from toolz.itertoolz import groupby as groupbyToolz
+from toolz.dicttoolz import valmap
 from itertools import accumulate, filterfalse, chain, count
 from functools import partial, reduce
 from os.path import join
@@ -28,15 +30,6 @@ logger = logging.getLogger(__name__)
 """
 addDictValues = lambda d1, d2: \
 	{key: d1.get(key, 0) + d2.get(key, 0) for key in set(d1.keys()).union(set(d2.keys()))}
-
-
-
-"""
-	[Set] unwanted keys, [Dictionary] d
-		=> [Dictioanry] d without those keys
-"""
-# removeKeysFromDict = lambda unwantedKeys, d: \
-# 	{k: v for (k, v) in d.items() if not k in unwantedKeys}
 
 
 
@@ -73,7 +66,30 @@ def getAccumulatedValue(mappingFunc, wantedKeys, inputList):
 	compose(
 		lambda values: accumulate(values, addDictValues)
 	  , partial(map, mappingFunc)
-	)(inputList)	
+	)(inputList)
+
+
+
+def getTaxlotInterestIncome(dailyInterestPositions):
+	"""
+	[Iterable] dailyInterestPositions => [Dictionary] tax lot id -> interest income
+	
+	Note that both the tax lots and event lots (such as sell, mature, coupon) will
+	be kept.
+
+	This means CERCG will also be filtered out because on the coupon date, fund
+	accounting will book a negative interest income.
+	"""
+	addup = lambda positions: \
+		sum(map(lambda p: p['LotSumOfChangeInAIBook'], positions))
+
+	return \
+	compose(
+		partial(valmap, addup)
+	  , partial(groupbyToolz, lambda p: p['LotID'])
+	  , partial(filterfalse, lambda p: p['LotSumOfChangeInAIBook'] < 0)
+	)(dailyInterestPositions)
+
 
 
 
