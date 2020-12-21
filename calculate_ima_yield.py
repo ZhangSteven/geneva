@@ -377,6 +377,9 @@ adjustInterestIncome = lambda x: x
 # 	[Iterable] accumulated interest income (since month 1)
 # 	=> [Iterable] accumulated interest income (since month 1)
 
+# 	When using closed period monthly daily interest accrual details
+# 	report, enable this method.
+
 # 	The point is to make interest income adjustment for the below
 # 	tax lots on and after month 8:
 
