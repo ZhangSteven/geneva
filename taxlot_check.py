@@ -9,12 +9,15 @@ from geneva.report import readProfitLossTxtReport \
 						, readDailyInterestAccrualDetailTxtReport \
 						, excelFileToLines, getRawPositions
 # from clamc_yield_report.ima import getTaxlotInterestIncome
-from geneva.calculate_ima_yield import getTaxlotInterestIncome
+from geneva.calculate_ima_yield import getTaxlotInterestIncome \
+						, getDailyInterestAccrualFiles \
+						, getInputDirectory
+from geneva.calculate_yield import getFilesWithFilterFunc
 from utils.utility import writeCsv
 from toolz.functoolz import compose
 from toolz.itertoolz import groupby as groupbyToolz
 from toolz.dicttoolz import valmap
-from itertools import accumulate, filterfalse, chain
+from itertools import accumulate, filterfalse, chain, count
 from functools import partial
 from os.path import join
 from datetime import datetime
@@ -77,22 +80,30 @@ def getInvestIdTaxlotMapping(dailyInterestFile):
 
 
 
-def writeComparisonCsv(month):
+def writeComparisonCsv(month, profitLossFile, dailyInterestFile):
 	"""
-	[Int] month => [String] csv output
+	[Int] month,
+	[String] profitLossFile,
+	[String] dailyInterestFile,
+	=> [String] csv output
 
 	Side effect: write csv output file showing the difference between position
 	level interest income and sum of tax lot level interest income.
 	"""
 	toString = lambda x: '0' + str(x) if x < 10 else str(x)
 
-	profitLossFile = join('samples', 'profit loss 2020-' + toString(month) + '.txt')
-	dailyInterestFile = join('samples', 'daily interest 2020-' + toString(month) + '.txt')
+	def getTaxLotInterestWithDefault(d, taxlotId):
+		if taxlotId in d:
+			return d[taxlotId]
+		else:
+			print('{0} not found'.format(taxlotId))
+			return 0
+
 
 	sumTaxlotInterestIncome = lambda taxlotMapping, taxLotInterestIncome, investId: \
 	compose(
 		sum
-	  , partial(map, lambda taxlotId: taxLotInterestIncome[taxlotId])
+	  , partial(map, partial(getTaxLotInterestWithDefault, taxLotInterestIncome))
 	  , lambda investId: taxlotMapping[investId]
 	)(investId)
 
@@ -139,6 +150,19 @@ def writeComparisonCsv(month):
 				   )
 			, delimiter=','
 			)
+# End of Function
+
+
+
+"""
+	[Configure Object] config => [Iterable] profit loss summary files
+"""
+getProfitLossFiles = lambda config: \
+getFilesWithFilterFunc(
+	lambda fn: \
+		fn.startswith('profit loss') and fn.endswith('.txt') and not fn.startswith('profit loss summary')
+  , getInputDirectory(config)
+)
 
 
 
@@ -147,5 +171,30 @@ if __name__ == '__main__':
 	import logging.config
 	logging.config.fileConfig('logging.config', disable_existing_loggers=False)
 
-	for n in range(1, 12):
-		print(writeComparisonCsv(n))
+	import configparser
+	config = configparser.ConfigParser()
+	config.read('calculate_ima_yield.config')
+
+	# 1. get files 
+	# 2. sort
+	# 3. join directory
+
+	# 1. zip(count(1), filelist1, filelist2)
+
+
+	dailyInterestFiles = compose(
+		partial(map, lambda fn: join(getInputDirectory(config), fn))
+	  , sorted
+	  , getDailyInterestAccrualFiles	
+	)(config)
+
+	profitLossFiles = compose(
+		partial(map, lambda fn: join(getInputDirectory(config), fn))
+	  , sorted
+	  , getProfitLossFiles
+	)(config)
+
+
+	for t in zip(count(1), profitLossFiles, dailyInterestFiles):
+		# print(t)
+		print(writeComparisonCsv(*t))

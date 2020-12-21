@@ -72,6 +72,10 @@ def getAccumulatedValue(mappingFunc, wantedKeys, inputList):
 
 def getTaxlotInterestIncome(dailyInterestPositions):
 	"""
+	Kicoo's simplified method of getting the interest income.
+	When using this method, please also turn off the function
+	adjustInterestIncome()
+
 	[Iterable] dailyInterestPositions => [Dictionary] tax lot id -> interest income
 	
 	Note that both the tax lots and event lots (such as sell, mature, coupon) will
@@ -87,7 +91,8 @@ def getTaxlotInterestIncome(dailyInterestPositions):
 	compose(
 		partial(valmap, addup)
 	  , partial(groupbyToolz, lambda p: p['LotID'])
-	  , partial(filterfalse, lambda p: p['LotSumOfChangeInAIBook'] < 0)
+	  , partial(filter, lambda p: p['LotSumOfChangeInAIBook'] > 0)
+	  , partial(filter, lambda p: p['LotQuantity'] > 0)
 	)(dailyInterestPositions)
 
 
@@ -275,25 +280,6 @@ getInputDirectory = lambda config: \
 
 
 """
-	[Config Object] config, [String] tax lot appraisal report
-	=> [Set] tax lot ids
-
-	Combine tax lot ids (non cash) that appear in the tax lot appraisal
-	report and those from the config object, return them as a set.
-"""
-# getUnwantedTaxLots = lambda config, lastYearTaxLotAppraisalFile: \
-# compose(
-# 	lambda s: getCNEnergyTaxlots(config).union(s)
-#   , set
-#   , partial(filterfalse, lambda el: el == '')
-#   , partial(map, lambda p: p['TaxLotID'])
-#   , lambda t: t[0]
-#   , partial(readTaxlotTxtReport, 'utf-16', '\t')
-# )(lastYearTaxLotAppraisalFile)
-
-
-
-"""
 	[String] purchase sales report
 	=> [Set] tax lot ids
 
@@ -340,7 +326,7 @@ getAccumulatedRealizedGainLossFromFiles = compose(
 """
 getProfitLossSummaryFiles = lambda config: \
 getFilesWithFilterFunc(
-	lambda fn: fn.startswith('profit loss summary tax lot') and fn.endswith('.txt')
+	lambda fn: fn.startswith('profit loss summary') and fn.endswith('.txt')
   , getInputDirectory(config)
 )
 
@@ -382,45 +368,52 @@ getPurchaseSalesFile = compose(
 
 
 
-def adjustInterestIncome(accumulatedInterestIncome):
-	"""
-	[Iterable] accumulated interest income (since month 1)
-	=> [Iterable] accumulated interest income (since month 1)
-
-	The point is to make interest income adjustment for the below
-	tax lots on and after month 8:
-
-	Lot 	 Adjustment
-	1075473	 (1,555,402.64)
-	1117941	 (408,489.58)
-	1117942	 (691,290.07)
-	1118109	 (408,489.58)
-	1118110	 (408,489.58)
-
-	"""
-	adjustment = { '1075473': -1555402.64
-				 , '1117941': -408489.58
-				 , '1117942': -691290.07
-				 , '1118109': -408489.58
-				 , '1118110': -408489.58
-				 }
-
-	# [Dictionary] tax lot id => interest income => [Dictionary] id -> income
-	adjustDict = compose(
-		dict
-	  , partial( map
-	  		   , lambda t: (t[0], t[1] + adjustment[t[0]]) \
-	  		   		if t[0] in adjustment else t
-	  		   )
-	  , lambda d: d.items()
-	)
+""" make it a dummy function when using Kicoo's simplified version """
+adjustInterestIncome = lambda x: x
 
 
-	return \
-	compose(
-		partial(map, lambda t: adjustDict(t[1]) if t[0] > 7 else t[1])
-	  , partial(zip, count(1))
-	)(accumulatedInterestIncome)
+# def adjustInterestIncome(accumulatedInterestIncome):
+# 	"""
+# 	[Iterable] accumulated interest income (since month 1)
+# 	=> [Iterable] accumulated interest income (since month 1)
+
+# 	The point is to make interest income adjustment for the below
+# 	tax lots on and after month 8:
+
+# 	Lot 	 Adjustment
+# 	1075473	 (1,555,402.64)
+# 	1117941	 (408,489.58)
+# 	1117942	 (691,290.07)
+# 	1118109	 (408,489.58)
+# 	1118110	 (408,489.58)
+
+# 	"""
+# 	adjustment = { '1075473': -1555402.64
+# 				 , '1117941': -408489.58
+# 				 , '1117942': -691290.07
+# 				 , '1118109': -408489.58
+# 				 , '1118110': -408489.58
+# 				 }
+
+# 	"""
+# 	[Dictionary] tax lot id 
+# 		=> interest income => [Dictionary] id -> income
+# 	"""
+# 	adjustDict = compose(
+# 		dict
+# 	  , partial( map
+# 	  		   , lambda t: (t[0], t[1] + adjustment[t[0]]) \
+# 	  		   		if t[0] in adjustment else t
+# 	  		   )
+# 	  , lambda d: d.items()
+# 	)
+
+
+# 	return \
+# 	compose(
+# 		partial(map, lambda t: adjustDict(t[1]) if t[0] > 7 else t[1])
+# 	  , partial(zip, count(1))
+# 	)(accumulatedInterestIncome)
 
 
 
@@ -432,10 +425,6 @@ if __name__ == '__main__':
 	import configparser
 	config = configparser.ConfigParser()
 	config.read('calculate_ima_yield.config')
-
-	# lastYearTaxLotAppraisalFile = join('samples', '12xxx tax lot 2019-12-31.txt')
-	# unwantedTaxLots = getUnwantedTaxLots(config, lastYearTaxLotAppraisalFile)
-	# print(unwantedTaxLots)
 
 	wantedTaxlots = getWantedTaxLots(getPurchaseSalesFile(config))
 
@@ -507,7 +496,34 @@ if __name__ == '__main__':
 	# )(accumulatedInterestIncome)
 
 
-	# Generate the wanted tax lots as of 2020 Nov
-	writeCsv( '2020 Nov tax lots.csv'
-			, chain( [('TaxLotID',)]
-				   , map(lambda s: (s,), wantedTaxlots)))
+	# # Generate the wanted tax lots as of 2020 Nov
+	# writeCsv( '2020 Nov tax lots.csv'
+	# 		, chain( [('TaxLotID',)]
+	# 			   , map(lambda s: (s,), wantedTaxlots)))
+
+
+	# compose(
+	# 	partial( writeCsv
+	# 		   , '2020-01 to 2020-11 tax lot income.csv')
+	#   , partial(chain, [('TaxLotID', 'interest income')])
+	#   , lambda d: d.items()	
+	#   , partial(keepKeysFromDict, wantedTaxlots)
+	#   , partial(getTaxlotInterestIncome)
+	#   , lambda t: t[0]
+	#   , partial(readDailyInterestAccrualDetailTxtReport, 'utf-16', '\t')
+	#   , lambda directory: \
+	#   		join(directory,  'total daily interest 2020-01 to 2020-11.txt')
+	#   , getInputDirectory
+	# )(config)
+
+
+	# compose(
+	# 	print
+	#   , partial(getTimeWeightedCapital, '2020-11-30')
+	#   , list
+	#   , lambda t: filter(lambda p: p['CashDate'] >= '2020-01-01' and p['CashDate'] <= '2020-11-30', t[0])
+	#   , partial(readCashLedgerTxtReport, 'utf-16', '\t')
+	#   , lambda directory: \
+	#   		join(directory,  'total cash ledger 2020-01 to 2020-12.txt')
+	#   , getInputDirectory
+	# )(config)
