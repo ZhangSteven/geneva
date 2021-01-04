@@ -114,9 +114,13 @@ def checkMetaData(plMetadata, invMetadata):
 		raise ValueError
 
 
-	if not all(map( lambda m: m['AccountingRunType'] == 'ClosedPeriod'
-				  , plMetadata + invMetadata)):
-		logger.error('checkMetaData(): not all are of closed period')
+	# if not all(map( lambda m: m['AccountingRunType'] == 'ClosedPeriod'
+	# 			  , plMetadata + invMetadata)):
+	# 	logger.error('checkMetaData(): not all are of closed period')
+	# 	raise ValueError
+
+	if not allEquals(map(lambda m: m['AccountingRunType'], plMetadata + invMetadata)):
+		logger.error('checkMetaData(): inconsistent accounting run type')
 		raise ValueError
 
 	if not allEquals(map(lambda m: m['Portfolio'], plMetadata + invMetadata)):
