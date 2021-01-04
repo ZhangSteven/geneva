@@ -333,7 +333,7 @@ getFilesWithFilterFunc(
 
 
 """
-	[Configure Object] config => [Iterable] profit loss summary files
+	[Configure Object] config => [Iterable] cash ledger files
 """
 getCashLedgerFiles = lambda config: \
 getFilesWithFilterFunc(
@@ -344,7 +344,7 @@ getFilesWithFilterFunc(
 
 
 """
-	[Configure Object] config => [Iterable] profit loss summary files
+	[Configure Object] config => [Iterable] daily interest accrual files
 """
 getDailyInterestAccrualFiles = lambda config: \
 getFilesWithFilterFunc(
