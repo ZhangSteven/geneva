@@ -441,7 +441,8 @@ if __name__ == '__main__':
 
 	accumulatedRealizedGL = compose(
 		list
-	  , partial(getAccumulatedRealizedGainLoss, wantedTaxlots)
+	  # , partial(getAccumulatedRealizedGainLoss, wantedTaxlots)
+	  , partial(getAccumulatedRealizedGainLoss, None)
 	)(sortedTaxlotPLpositions)
 
 	accumulatedFairValueChange = compose(
