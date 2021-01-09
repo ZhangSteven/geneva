@@ -97,7 +97,6 @@ def getTaxlotInterestIncome(dailyInterestPositions):
 
 
 
-
 def getFairValueChange(taxlotPLpositions):
 	"""
 	[Iterable] sortedTaxlotPLpositions
@@ -111,6 +110,9 @@ def getFairValueChange(taxlotPLpositions):
 
 	Note cash lots (tax lot id = '') are ignored.
 	"""
+	isHTM = lambda investId: \
+		' HTM' in investId
+
 	return \
 	compose(
 		dict
@@ -119,7 +121,7 @@ def getFairValueChange(taxlotPLpositions):
 	  					   , p['UnrealGLPrice_taxlot']+p['UnrealFX_taxlot'])
 	  		   )
 	  , partial( filter
-	  		   , lambda p: 'Bond' in p['Group1'] and not p['Group2'] == 'Held to Maturity')
+	  		   , lambda p: 'Bond' in p['Group1'] and not isHTM(p['Invest']))
 	)(taxlotPLpositions)
 
 
@@ -283,13 +285,13 @@ getInputDirectory = lambda config: \
 	[String] purchase sales report
 	=> [Set] tax lot ids
 
-	Get tax lot ids that are bought during a period using a purchase
-	sales report, return them as a set.
+	Get tax lot ids that are bought from a purchase sales report, 
+	return them as a set.
 
-	We cannot use cash ledger report to do this, becaue cash ledger
-	does not include unsettled trades.
+	Cash ledger report can serve a similar purpose, but it does not
+	include unsettled trades.
 """
-getWantedTaxLots = lambda purchaseSalesFile: \
+getPurchasedTaxlots = lambda purchaseSalesFile: \
 compose(
  	set
   , partial(map, lambda p: p['TranID'])
@@ -297,6 +299,27 @@ compose(
   , lambda t: t[0]
   , partial(readTxtReport, 'utf-16', '\t')
 )(purchaseSalesFile)
+
+
+
+"""
+	[String] purchase sales report
+	=> [Set] tax lot ids
+
+	Get tax lot ids that are bought from a purchase sales report, 
+	return them as a set.
+
+	Cash ledger report can serve a similar purpose, but it does not
+	include unsettled trades.
+"""
+getBondConnectTaxlots = lambda profitLossSummaryFile: \
+compose(
+	set
+  , partial(map, lambda p: '' if p['TaxLotId'] == '' else p['TaxLotId'].split(':')[1].strip())
+  , partial(filter, lambda p: 'CLO BondConnect_internal ref.' in p['Group2'])
+  , lambda t: t[0]
+  , partial(readTxtReport, 'utf-16', '\t')
+)(profitLossSummaryFile)
 
 
 
@@ -420,6 +443,96 @@ adjustInterestIncome = lambda x: x
 
 
 
+def getResultFromFiles( purchaseSalesFile, cashLedgerFiles
+					  , profitLossSummaryFiles, dailyInterestAccrualFiles
+					  , useAllTaxlotsForRealizedGainloss
+					  , bondConnectOnly):
+	"""
+	[String] purchaseSalesFile
+	[List] cash ledger files,
+	[List] profit loss summary files,
+	[List] daily interest accrual files,
+	[Bool] use all tax lots for realized gain computation,
+	[Bool] use bond connect tax lots only
+
+	=> ( accumulatedInterestIncome
+	   , accumulatedRealizedGL
+	   , accumulatedFairValueChange
+	   , timeWeightedCapital
+	   )
+	"""
+	purchasedTaxlots = getPurchasedTaxlots(purchaseSalesFile)
+	bondConnectTaxlots = compose(
+		partial(reduce, lambda s1, s2: s1.union(s2))
+	  , partial(map, getBondConnectTaxlots)
+	)(profitLossSummaryFiles)
+
+	sortedPLdata = sorted( map( partial( readProfitLossSummaryWithTaxLotTxtReport
+									   , 'utf-16', '\t')
+							  , profitLossSummaryFiles)
+						 , key=lambda t: t[1]['PeriodEndDate']
+						 )
+
+	sortedTaxlotPLpositions = list(map(lambda t: list(t[0]), sortedPLdata))
+
+	accumulatedRealizedGL = compose(
+		list
+	  , partial(getAccumulatedRealizedGainLoss, bondConnectTaxlots) \
+	  	if useAllTaxlotsForRealizedGainloss and bondConnectOnly else \
+	  	partial(getAccumulatedRealizedGainLoss, None) \
+	  	if useAllTaxlotsForRealizedGainloss and not bondConnectOnly else \
+	  	partial(getAccumulatedRealizedGainLoss, purchasedTaxlots.intersection(bondConnectTaxlots)) \
+	  	if not useAllTaxlotsForRealizedGainloss and bondConnectOnly else \
+	  	partial(getAccumulatedRealizedGainLoss, purchasedTaxlots)
+
+	)(sortedTaxlotPLpositions)
+
+	accumulatedFairValueChange = compose(
+		list
+	  , partial(getAccumulatedFairValueChange, purchasedTaxlots.intersection(bondConnectTaxlots)) \
+	  	if bondConnectOnly else \
+	  	partial(getAccumulatedFairValueChange, purchasedTaxlots)
+
+	)(sortedTaxlotPLpositions)
+
+
+	sortedInterestData = \
+		sorted( map( partial( readDailyInterestAccrualDetailTxtReport
+							, 'utf-16', '\t')
+				   , dailyInterestAccrualFiles)
+			  , key=lambda t: t[1]['PeriodEndDate'])
+
+	sortedDailyInterestPositions = map(lambda t: list(t[0]), sortedInterestData)
+
+	accumulatedInterestIncome = compose(
+		list
+	  , adjustInterestIncome
+	  , partial(getAccumulatedInterestIncome, purchasedTaxlots.intersection(bondConnectTaxlots)) \
+	  	if bondConnectOnly else \
+	  	partial(getAccumulatedInterestIncome, purchasedTaxlots)
+
+	)(sortedDailyInterestPositions)
+
+
+	timeWeightedCapital = compose(
+		list
+	  , getAccumulatedTimeWeightedCapital
+	  , partial(sorted, key=lambda t: t[0])
+	  , partial(map, lambda t: (t[1]['PeriodEndDate'], list(t[0])))
+	  , partial(map, partial(readCashLedgerTxtReport, 'utf-16', '\t'))
+	  , getCashLedgerFiles
+	)(config)
+
+
+	return \
+		accumulatedInterestIncome \
+	  , accumulatedRealizedGL \
+	  , accumulatedFairValueChange \
+	  , timeWeightedCapital
+# End of function
+
+
+
 
 if __name__ == '__main__':
 	import logging.config
@@ -429,7 +542,42 @@ if __name__ == '__main__':
 	config = configparser.ConfigParser()
 	config.read('calculate_ima_yield.config')
 
-	wantedTaxlots = getWantedTaxLots(getPurchaseSalesFile(config))
+	"""
+	purchased tax lots, bond connect tax lots
+	
+	two switches:
+
+	--use all tax lots for realized gain loss
+	--bond connect
+
+	for accumulated realized gain loss, 
+	wanted tax lots = 
+	None, if use all tax lots, no bond connect
+	bond connect tax lots, if use all tax lots, bond connect
+	purchased tax lots, if not use all tax lots, no bond connect
+	intersect of (purchased tax lots, bond connect tax lots), if not use all
+		tax lots, bond connect
+
+	for interest income,
+	wanted tax lots = 
+	purchased tax lots, if no bond connect
+	intersect of (purchased tax lots, bond connect tax lots), if bond connect
+
+	for unrealized gain loss,
+	same logic as interest income
+
+
+	Add command line switches to control wanted tax lots:
+
+
+	1. if using bond connect, then wanted tax lots = intersect of 
+		(wanted tax lots, bond connect tax lots)
+
+	2. if using realized gain loss all, then wanted tax lots for realized gain loss
+		= None, else = wanted tax lots
+	"""
+
+	purchasedTaxlots = getPurchasedTaxlots(getPurchaseSalesFile(config))
 
 	sortedPLdata = sorted( map( partial( readProfitLossSummaryWithTaxLotTxtReport
 									   , 'utf-16', '\t')
@@ -441,13 +589,13 @@ if __name__ == '__main__':
 
 	accumulatedRealizedGL = compose(
 		list
-	  # , partial(getAccumulatedRealizedGainLoss, wantedTaxlots)
+	  # , partial(getAccumulatedRealizedGainLoss, purchasedTaxlots)
 	  , partial(getAccumulatedRealizedGainLoss, None)
 	)(sortedTaxlotPLpositions)
 
 	accumulatedFairValueChange = compose(
 		list
-	  , partial(getAccumulatedFairValueChange, wantedTaxlots)
+	  , partial(getAccumulatedFairValueChange, purchasedTaxlots)
 	)(sortedTaxlotPLpositions)
 
 
@@ -462,7 +610,7 @@ if __name__ == '__main__':
 	accumulatedInterestIncome = compose(
 		list
 	  , adjustInterestIncome
-	  , partial(getAccumulatedInterestIncome, wantedTaxlots)
+	  , partial(getAccumulatedInterestIncome, purchasedTaxlots)
 	)(sortedDailyInterestPositions)
 
 
@@ -489,6 +637,22 @@ if __name__ == '__main__':
 	  			   , timeWeightedCapital)
 	)()
 
+	# Need to re-generate profit loss summary files with group2 = custodian
+	# compose(
+	# 	partial(writeCsv, 'ima result.csv')
+	#   , partial(chain, [('interest income', 'realized gain', 'fair value change', 'time weighted capital')])
+	#   , partial( map
+	#   		   , lambda t: (addValues(t[0]), addValues(t[1]), addValues(t[2]), t[3]))
+	#   , lambda t: zip(*t)
+	# )(getResultFromFiles(
+	# 	getPurchaseSalesFile(config)
+	#   , getCashLedgerFiles(config)
+	#   , getProfitLossSummaryFiles(config)
+	#   , getDailyInterestAccrualFiles(config)
+	#   , True
+	#   , False
+	#  ))
+
 
 	# Generate the tax lot ids in 2020 Nov accumulated interest
 	# income.
@@ -503,7 +667,7 @@ if __name__ == '__main__':
 	# # Generate the wanted tax lots as of 2020 Nov
 	# writeCsv( '2020 Nov tax lots.csv'
 	# 		, chain( [('TaxLotID',)]
-	# 			   , map(lambda s: (s,), wantedTaxlots)))
+	# 			   , map(lambda s: (s,), purchasedTaxlots)))
 
 
 	# compose(
@@ -511,7 +675,7 @@ if __name__ == '__main__':
 	# 		   , '2020-01 to 2020-11 tax lot income.csv')
 	#   , partial(chain, [('TaxLotID', 'interest income')])
 	#   , lambda d: d.items()	
-	#   , partial(keepKeysFromDict, wantedTaxlots)
+	#   , partial(keepKeysFromDict, purchasedTaxlots)
 	#   , partial(getTaxlotInterestIncome)
 	#   , lambda t: t[0]
 	#   , partial(readDailyInterestAccrualDetailTxtReport, 'utf-16', '\t')
