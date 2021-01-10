@@ -24,24 +24,28 @@ class TestCalculateIMAYield(unittest2.TestCase):
 		super(TestCalculateIMAYield, self).__init__(*args, **kwargs)
 
 
-	def testGetAccumulatedInterestIncome(self):
-		files = \
-			[ join(getCurrentDirectory(), 'samples', 'daily interest 2020-01.txt')
-			, join(getCurrentDirectory(), 'samples', 'daily interest 2020-02.txt')
-			, join(getCurrentDirectory(), 'samples', 'daily interest 2020-03.txt')
-			]
+	# This one only works when getTaxlotInterestIncome() is imported from
+	# clamc_yield_report.ima. When we use Kicoo's method to get interest
+	# income, then this test case is no longer valid.
+	# 
+	# def testGetAccumulatedInterestIncome(self):
+	# 	files = \
+	# 		[ join(getCurrentDirectory(), 'samples', 'daily interest 2020-01.txt')
+	# 		, join(getCurrentDirectory(), 'samples', 'daily interest 2020-02.txt')
+	# 		, join(getCurrentDirectory(), 'samples', 'daily interest 2020-03.txt')
+	# 		]
 
-		totalInterestIncome = compose(
-			list
-		  , partial(map, lambda d: sum(d.values()))
-		  , partial(getAccumulatedInterestIncome, None)
-		  , partial(map, lambda t: list(t[0]))
-		  , partial(map, partial(readDailyInterestAccrualDetailTxtReport, 'utf-16', '\t'))
-		)(files)
+	# 	totalInterestIncome = compose(
+	# 		list
+	# 	  , partial(map, lambda d: sum(d.values()))
+	# 	  , partial(getAccumulatedInterestIncome, None)
+	# 	  , partial(map, lambda t: list(t[0]))
+	# 	  , partial(map, partial(readDailyInterestAccrualDetailTxtReport, 'utf-16', '\t'))
+	# 	)(files)
 
-		self.assertAlmostEqual( 811088743.30, totalInterestIncome[0], 2)
-		self.assertAlmostEqual(1566743855.37, totalInterestIncome[1], 2)
-		self.assertAlmostEqual(2375097673.68, totalInterestIncome[2], 2)
+	# 	self.assertAlmostEqual( 811088743.30, totalInterestIncome[0], 2)
+	# 	self.assertAlmostEqual(1566743855.37, totalInterestIncome[1], 2)
+	# 	self.assertAlmostEqual(2375097673.68, totalInterestIncome[2], 2)
 
 
 
