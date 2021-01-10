@@ -15,6 +15,12 @@ CSV (Comma delimited) | Text (.csv) | likely utf-8, to be confirmed
 But when Geneva generates reports in batch mode, the output format will be "Unicode text".
 
 
+### calculate_ima_yield.py To Do
+1. Create test case for getResultFromFiles();
+2. Fix test case failures;
+3. Add command line arguments for calculate_ima_yield.py.
+
+
 ### To Do
 Reading a multipart report.
 
