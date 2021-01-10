@@ -312,11 +312,6 @@ compose(
 	Cash ledger report can serve a similar purpose, but it does not
 	include unsettled trades.
 """
-# def getTaxLotId_(p):
-# 	logger.debug('{0}, {1}'.format(p['Invest'], p['TaxLotId']))
-# 	print(p['TaxLotId'].split(':'))
-# 	return '' if p['TaxLotId'].strip() == '' else p['TaxLotId'].split(':')[1].strip()
-
 getBondConnectTaxlots = compose(
 	set
   , partial(map, lambda p: p['TaxLotId'].split(':')[-1].strip())
@@ -546,102 +541,8 @@ if __name__ == '__main__':
 	config = configparser.ConfigParser()
 	config.read('calculate_ima_yield.config')
 
-	"""
-	purchased tax lots, bond connect tax lots
-	
-	two switches:
 
-	--use all tax lots for realized gain loss
-	--bond connect
-
-	for accumulated realized gain loss, 
-	wanted tax lots = 
-	None, if use all tax lots, no bond connect
-	bond connect tax lots, if use all tax lots, bond connect
-	purchased tax lots, if not use all tax lots, no bond connect
-	intersect of (purchased tax lots, bond connect tax lots), if not use all
-		tax lots, bond connect
-
-	for interest income,
-	wanted tax lots = 
-	purchased tax lots, if no bond connect
-	intersect of (purchased tax lots, bond connect tax lots), if bond connect
-
-	for unrealized gain loss,
-	same logic as interest income
-
-
-	Add command line switches to control wanted tax lots:
-
-
-	1. if using bond connect, then wanted tax lots = intersect of 
-		(wanted tax lots, bond connect tax lots)
-
-	2. if using realized gain loss all, then wanted tax lots for realized gain loss
-		= None, else = wanted tax lots
-	"""
-
-	# purchasedTaxlots = getPurchasedTaxlots(getPurchaseSalesFile(config))
-
-	# sortedPLdata = sorted( map( partial( readProfitLossSummaryWithTaxLotTxtReport
-	# 								   , 'utf-16', '\t')
-	# 						  , getProfitLossSummaryFiles(config))
-	# 					 , key=lambda t: t[1]['PeriodEndDate']
-	# 					 )
-
-	# sortedTaxlotPLpositions = list(map(lambda t: list(t[0]), sortedPLdata))
-
-	# accumulatedRealizedGL = compose(
-	# 	list
-	#   # , partial(getAccumulatedRealizedGainLoss, purchasedTaxlots)
-	#   , partial(getAccumulatedRealizedGainLoss, None)
-	# )(sortedTaxlotPLpositions)
-
-	# accumulatedFairValueChange = compose(
-	# 	list
-	#   , partial(getAccumulatedFairValueChange, purchasedTaxlots)
-	# )(sortedTaxlotPLpositions)
-
-
-	# sortedInterestData = \
-	# 	sorted( map( partial( readDailyInterestAccrualDetailTxtReport
-	# 						, 'utf-16', '\t')
-	# 			   , getDailyInterestAccrualFiles(config))
-	# 		  , key=lambda t: t[1]['PeriodEndDate'])
-
-	# sortedDailyInterestPositions = map(lambda t: list(t[0]), sortedInterestData)
-
-	# accumulatedInterestIncome = compose(
-	# 	list
-	#   , adjustInterestIncome
-	#   , partial(getAccumulatedInterestIncome, purchasedTaxlots)
-	# )(sortedDailyInterestPositions)
-
-
-	# timeWeightedCapital = compose(
-	# 	list
-	#   , getAccumulatedTimeWeightedCapital
-	#   , partial(sorted, key=lambda t: t[0])
-	#   , partial(map, lambda t: (t[1]['PeriodEndDate'], list(t[0])))
-	#   , partial(map, partial(readCashLedgerTxtReport, 'utf-16', '\t'))
-	#   , getCashLedgerFiles
-	# )(config)
-
-
-	# # Generate the csv
 	addValues = lambda d: sum(d.values())
-	# compose(
-	# 	partial(writeCsv, 'ima result.csv')
-	#   , partial(chain, [('interest income', 'realized gain', 'fair value change', 'time weighted capital')])
-	#   , partial( map
-	#   		   , lambda t: (addValues(t[0]), addValues(t[1]), addValues(t[2]), t[3]))
-	#   , lambda: zip( accumulatedInterestIncome
-	#   			   , accumulatedRealizedGL
-	#   			   , accumulatedFairValueChange
-	#   			   , timeWeightedCapital)
-	# )()
-
-	# Need to re-generate profit loss summary files with group2 = custodian
 	compose(
 		partial(writeCsv, 'ima result.csv')
 	  , partial(chain, [('interest income', 'realized gain', 'fair value change', 'time weighted capital')])
@@ -654,7 +555,7 @@ if __name__ == '__main__':
 	  , list(getCashLedgerFiles(config))
 	  , list(getProfitLossSummaryFiles(config))
 	  , list(getDailyInterestAccrualFiles(config))
-	  , False
+	  , True
 	  , False
 	 )
 
