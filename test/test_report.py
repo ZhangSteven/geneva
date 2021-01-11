@@ -6,7 +6,9 @@ from geneva.report import getCurrentDirectory, readExcelReport, readTxtReport \
 						, readTaxlotTxtReport, readInvestmentTxtReport \
 						, readProfitLossTxtReport, readCashLedgerTxtReport \
 						, readDailyInterestAccrualDetailTxtReport \
-						, readProfitLossSummaryWithTaxLotTxtReport
+						, readProfitLossSummaryWithTaxLotTxtReport \
+						, readMultipartInvestmentTxtReport
+from steven_utils.iter import firstN
 from os.path import join
 
 
@@ -111,6 +113,18 @@ class TestReport(unittest2.TestCase):
 
 
 
+	def testReadMultipartInvestmentTxtReport(self):
+		inputFile = join(getCurrentDirectory(), 'samples', '12xxx investment multipart.txt')
+		result = list(readMultipartInvestmentTxtReport('utf-16', '\t', inputFile))
+		self.assertEqual(6, len(result))
+		self.assertEqual( ['12229', '12366', '12549', '12550', '12630', '12734']
+						, list(map(lambda t: t[1]['Portfolio'], result)))
+		self.verifyInvestmentPosition2(list(result[0][0])[0])
+		self.assertEqual(0, len(list(result[3][0])))
+		self.verifyInvestmentPosition3(list(result[5][0])[-1])
+
+
+
 	def verifyMetaData(self, metaData):
 		self.assertEqual('20051', metaData['Portfolio'])
 		self.assertEqual('HKD', metaData['BookCurrency'])
@@ -167,6 +181,26 @@ class TestReport(unittest2.TestCase):
 		self.assertEqual('NA', position['LocalPrice'])
 		self.assertEqual(-2442286.66, position['BookUnrealizedGainOrLoss'])
 		self.assertEqual(0.001, position['Invest'])
+
+
+
+	def verifyInvestmentPosition2(self, position):
+		self.assertEqual('Chinese Renminbi Yuan', position['LocalCurrency'])
+		self.assertEqual('CNY', position['InvestID'])
+		self.assertEqual(6269303.08, position['Quantity'])
+		self.assertEqual(1, position['LocalPrice'])
+		self.assertEqual(65122.90, position['BookUnrealizedGainOrLoss'])
+		self.assertEqual(0.0001, position['Invest'])
+
+
+
+	def verifyInvestmentPosition3(self, position):
+		self.assertEqual('United States Dollar', position['LocalCurrency'])
+		self.assertEqual('US912803AY96 HTM', position['InvestID'])
+		self.assertEqual(2250000, position['Quantity'])
+		self.assertEqual('NA', position['LocalPrice'])
+		self.assertEqual(-31172.16, position['BookUnrealizedGainOrLoss'])
+		self.assertEqual(0.0002, position['Invest'])
 
 
 
