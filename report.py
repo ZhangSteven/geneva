@@ -8,7 +8,7 @@ from toolz.functoolz import compose
 from utils.iter import pop
 from utils.excel import worksheetToLines
 from utils.utility import fromExcelOrdinal
-from itertools import takewhile, groupby, count, dropwhile
+from itertools import takewhile, groupby, count, dropwhile, chain
 from functools import partial, reduce
 from os.path import abspath, dirname
 from datetime import datetime
@@ -82,6 +82,39 @@ readReport = compose(
   , partial(filter, lambda el: el[0] == False)
   , lambda lines: groupby(lines, lambda line: len(line) == 0 or line[0] == '')
 )
+
+
+
+def groupMultipartReportLines(lines):
+	"""
+		[Iterable] lines => [Iterable] groups
+
+		Where each group is an iterable over lines of one portfolio in the
+		multiple report.
+	"""
+	isErrorLine = lambda line: \
+		len(line) > 1 and (line[0], line[1]) == ('EventNumber', 'ErrorMessage')
+
+
+	"""
+		[Iterable] groups => [Iterable] lines
+		where each group is an iterable over lines, insert a blank
+		line in between two groups.
+	"""
+	groupToLines = lambda groups: \
+		reduce(lambda g1, g2: chain(g1, [['']], g2), groups)
+
+
+	return \
+	compose(
+		partial(map, groupToLines)
+	  , partial(map, lambda t: t[1])
+	  , partial(filter, lambda t: t[0] == False)
+	  , lambda groups: groupby(groups, lambda group: isErrorLine(group[0]))
+	  , partial(map, lambda t: list(t[1]))
+	  , partial(filter, lambda t: t[0] == False)
+	  , lambda lines: groupby(lines, lambda line: len(line) == 0 or line[0] == '')
+	)(lines)
 
 
 
@@ -163,6 +196,7 @@ def txtFileToLines(encoding, filename):
 stringToList = compose(
 	list
   , partial(map, lambda s: s.strip())
+  , partial(map, lambda s: s[1:] if len(s) > 0 and s[0] == '\ufeff' else s)
   , lambda delimiter, line: line.strip().split(delimiter)
 )
 
@@ -187,44 +221,16 @@ readTxtReportFromLines = compose(
 
 
 
-def readMultipartTxtReportFromLines(lines):
-	"""
-	[Iterable] lines from a multipart txt file
-		=> [Iterator] ( [Iterable] positions
-					  , [Dictionary] meta data
-					  )
-
-	Read a multi part txt Geneva report. When we use Geneva to generate
-	report from a group of portfolios, if consolidation = None, then
-	we will have a multipart report.
-	"""
-	isErrorLine = lambda line: \
-		len(line) > 1 and (line[0], line[1]) == ('EventNumber', 'ErrorMessage')
-
-
-	"""
-		[Iterable] groups => [Iterable] lines
-		where each group is an iterable over lines, insert a blank
-		line in between two groups.
-	"""
-	groupsToLines = lambda groups: \
-		reduce(lambda g1, g2: chain(g1, [['']], g2), groups)
-
-
-	"""
-		[Iterable] lines => [Iterable] lines
-	"""
-	partition = compose(
-		partial(map, groupsToLines)
-	  , partial(filter, lambda t: t[0] == False)
-	  , lambda groups: groupby(groups, lambda group: isErrorLine(group[0]))
-	  , partial(map, lambda t: list(t[1]))
-	  , partial(filter, lambda t: t[0] == False)
-	  , lambda lines: groupby(lines, lambda line: len(line) == 0 or line[0] == '')
-	)
-
-
-	return partition(lines)
+"""	
+	[String] encoding, [String] delimiter, [String] filename
+	 => [Iterator] positions, [Dictionary] meta data
+"""
+readTxtReport = lambda encoding, delimiter, file: \
+compose(
+	readTxtReportFromLines
+  , partial(map, partial(stringToList, delimiter))
+  , partial(txtFileToLines, encoding)
+)(file)
 
 
 
@@ -232,17 +238,14 @@ def readMultipartTxtReportFromLines(lines):
 	[String] encoding, [String] delimiter, [String] filename
 	 => [Iterator] positions, [Dictionary] meta data
 """
-# readTxtReport = lambda encoding, delimiter, file: \
-# 	readTxtReportFromLines( delimiter
-# 						  , map( partial(stringToList, delimiter)
-# 						  	   , txtFileToLines(encoding, file)))
-
-readTxtReport = lambda encoding, delimiter, file: \
+readMultipartTxtReport = lambda encoding, delimiter, file: \
 compose(
-	readTxtReportFromLines
+	partial(map, readTxtReportFromLines)
+  , groupMultipartReportLines
   , partial(map, partial(stringToList, delimiter))
   , partial(txtFileToLines, encoding)
 )(file)
+
 
 
 
@@ -338,20 +341,29 @@ readTaxlotTxtReport = compose(
 	[String] encoding, [String] delimiter, [String] file
 		=> [Iterator] positions, [Dictionary] metadata
 """
+investmentTxtReportUpdater = partial(
+	updatePositionWithFunctionMap
+  , { 'Quantity': updateNumber
+	, 'LocalPrice': updateNumber
+	, 'CostLocal': updateNumber
+	, 'CostBook': updateNumber
+	, 'BookUnrealizedGainOrLoss': updateNumber
+	, 'AccruedInterest': updateNumber
+	, 'MarketValueBook': updateNumber
+	, 'Invest': numberFromPercentString
+	}
+)
+
+
 readInvestmentTxtReport = compose(
-	partial(
-		updatePositionWithFunctionMap
-	  , { 'Quantity': updateNumber
-	    , 'LocalPrice': updateNumber
-	    , 'CostLocal': updateNumber
-	    , 'CostBook': updateNumber
-	    , 'BookUnrealizedGainOrLoss': updateNumber
-	    , 'AccruedInterest': updateNumber
-	    , 'MarketValueBook': updateNumber
-	    , 'Invest': numberFromPercentString
-	  	}
-	)
+	investmentTxtReportUpdater
   , readTxtReport
+)
+
+
+readMultipartInvestmentTxtReport = compose(
+	partial(map, investmentTxtReportUpdater)
+  , readMultipartTxtReport
 )
 
 
