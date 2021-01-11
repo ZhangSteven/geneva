@@ -25,7 +25,7 @@ class TestCalculateIMAYield(unittest2.TestCase):
 
 
 	# This one only works when getTaxlotInterestIncome() is imported from
-	# clamc_yield_report.ima. When we use Kicoo's method to get interest
+	# clamc_yield_report.ima.py. When we use Kicoo's method to get interest
 	# income, then this test case is no longer valid.
 	# 
 	# def testGetAccumulatedInterestIncome(self):
@@ -84,7 +84,7 @@ class TestCalculateIMAYield(unittest2.TestCase):
 
 		self.assertEqual('2020-01-31', sortedCLPositions[0][0])
 		self.assertEqual('2020-02-29', sortedCLPositions[1][0])
-		L = list(getAccumulatedTimeWeightedCapital(sortedCLPositions))
+		L = list(getAccumulatedTimeWeightedCapital(False, sortedCLPositions))
 		self.assertEqual(3, len(L))
 		self.assertAlmostEqual( 163922587.75, L[0], 2)
 		self.assertAlmostEqual( 556735459.34, L[1], 2)

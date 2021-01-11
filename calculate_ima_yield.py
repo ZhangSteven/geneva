@@ -11,6 +11,7 @@ from geneva.calculate_yield import getFilesWithFilterFunc
 # from clamc_yield_report.ima import getTaxlotInterestIncome
 from utils.file import getFiles
 from utils.utility import writeCsv
+from steven_utils.utility import mergeDict
 from toolz.functoolz import compose
 from toolz.itertoolz import groupby as groupbyToolz
 from toolz.dicttoolz import valmap
@@ -198,15 +199,38 @@ getAccumulatedInterestIncome = partial(
 
 
 
-def getAccumulatedTimeWeightedCapital(sortedCLPositions):
+def getAccumulatedTimeWeightedCapital(bondConnectOnly, sortedCLPositions):
 	"""
+	[Bool] bondConnectOnly
 	[Iterable] ([String] period end date, [List] positions of that period)
 	=> [Iterable] Float (time weighted return at each period end date)
 
 	"""
-	return map( lambda t: getTimeWeightedCapital(t[0], t[1])
-			  , accumulate( sortedCLPositions
-	  		   			  , lambda t1, t2: (t2[0], t1[1] + t2[1])))
+
+	"""
+		[Iterable] cash ledger entries => [Iterable] cash ledger entries
+
+		filter and change the entries for bond connect calculation.
+	"""
+	mappingFunc = compose(
+		partial( map 
+			   , lambda p: mergeDict(p, {'TranDescription': 'Deposit'}) \
+					if p['TranDescription'] == 'Transfer' else p
+			   )
+	  , partial( filter
+			   , lambda p: 'BOCHK_BC' in p['GroupWithinCurrency_OpeningBalDesc']
+			   )
+	)
+
+
+	return \
+	compose(
+		partial(map, lambda t: getTimeWeightedCapital(t[0], t[1]))
+	  , partial(map, lambda t: (t[0], list(mappingFunc(t[1])))) \
+	  	if bondConnectOnly else partial(map, lambda t: t)
+	  , lambda sortedCLPositions: \
+	  		accumulate(sortedCLPositions, lambda t1, t2: (t2[0], t1[1] + t2[1]))
+	)(sortedCLPositions)
 
 
 
@@ -515,7 +539,7 @@ def getResultFromFiles( purchaseSalesFile, cashLedgerFiles
 
 	timeWeightedCapital = compose(
 		list
-	  , getAccumulatedTimeWeightedCapital
+	  , partial(getAccumulatedTimeWeightedCapital, bondConnectOnly)
 	  , partial(sorted, key=lambda t: t[0])
 	  , partial(map, lambda t: (t[1]['PeriodEndDate'], list(t[0])))
 	  , partial(map, partial(readCashLedgerTxtReport, 'utf-16', '\t'))
@@ -556,7 +580,7 @@ if __name__ == '__main__':
 	  , list(getProfitLossSummaryFiles(config))
 	  , list(getDailyInterestAccrualFiles(config))
 	  , True
-	  , False
+	  , True
 	 )
 
 
