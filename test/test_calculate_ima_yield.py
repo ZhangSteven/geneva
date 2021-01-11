@@ -10,7 +10,7 @@ from geneva.calculate_ima_yield import getTimeWeightedCapital \
 						, getAccumulatedTimeWeightedCapital \
 						, getAccumulatedInterestIncome, getRealizedGainLoss \
 						, getAccumulatedRealizedGainLoss, getFairValueChange \
-						, getAccumulatedFairValueChange
+						, getAccumulatedFairValueChange, getResultFromFiles
 from toolz.functoolz import compose
 from functools import partial
 from itertools import accumulate
@@ -159,3 +159,129 @@ class TestCalculateIMAYield(unittest2.TestCase):
 		self.assertEqual(2, len(values))
 		self.assertAlmostEqual(8071778.13, values[0])
 		self.assertAlmostEqual(8071778.13 - 6700947.29, values[1])
+
+
+
+	def testGetResultFromFiles(self):
+		"""
+		Test overall computation, in the case that:
+
+		1) Use all tax lots for realized gain loss;
+		2) All positions are included.
+		"""
+		accumulatedInterestIncome, accumulatedRealizedGL, \
+		accumulatedFairValueChange , timeWeightedCapital = \
+			getResultFromFiles(*getFiles(), True, False)
+
+		addValues = lambda d: sum(d.values())
+
+		self.assertAlmostEqual( 728571487.899
+							  , addValues(accumulatedInterestIncome[-1])
+							  , 2)
+
+		self.assertAlmostEqual( 762896347.08
+							  , addValues(accumulatedRealizedGL[-1])
+							  , 2)
+
+		self.assertAlmostEqual( 54030490.71
+							  , addValues(accumulatedFairValueChange[-1])
+							  , 2)
+
+		self.assertAlmostEqual( 29951721898.17
+							  , timeWeightedCapital[-1]
+							  , 2)
+
+
+
+	def testGetResultFromFiles2(self):
+		"""
+		Test overall computation, in the case that:
+
+		1) Use all tax lots for realized gain loss;
+		2) Only bond connect positions are included.
+		"""
+		accumulatedInterestIncome, accumulatedRealizedGL, \
+		accumulatedFairValueChange , timeWeightedCapital = \
+			getResultFromFiles(*getFiles(), True, True)
+
+		addValues = lambda d: sum(d.values())
+
+		self.assertAlmostEqual( 5049819.83
+							  , addValues(accumulatedInterestIncome[-1])
+							  , 2)
+
+		self.assertAlmostEqual( 0
+							  , addValues(accumulatedRealizedGL[-1])
+							  , 2)
+
+		self.assertAlmostEqual( 37458712.95
+							  , addValues(accumulatedFairValueChange[-1])
+							  , 2)
+
+		self.assertAlmostEqual( 230115859.79
+							  , timeWeightedCapital[-1]
+							  , 2)
+
+
+
+def getFiles():
+	"""
+	helper function for the tests:
+
+	[Tuple] ( purchaseSalesFile, cashLedgerFiles
+			, profitLossSummaryFiles, dailyInterestAccrualFiles)
+	"""
+	addDirectory = lambda file: \
+		join('samples', '2020 year data', file)
+
+	cashLedgerFiles = \
+	[ 'cash ledger custodian 2020-01.txt'
+	, 'cash ledger custodian 2020-02.txt'
+	, 'cash ledger custodian 2020-03.txt'
+	, 'cash ledger custodian 2020-04.txt'
+	, 'cash ledger custodian 2020-05.txt'
+	, 'cash ledger custodian 2020-06.txt'
+	, 'cash ledger custodian 2020-07.txt'
+	, 'cash ledger custodian 2020-08.txt'
+	, 'cash ledger custodian 2020-09.txt'
+	, 'cash ledger custodian 2020-10.txt'
+	, 'cash ledger custodian 2020-11.txt'
+	, 'cash ledger custodian 2020-12.txt'
+	]
+
+	profitLossSummaryFiles = \
+	[ 'profit loss summary custodian 2020-01.txt'
+	, 'profit loss summary custodian 2020-02.txt'
+	, 'profit loss summary custodian 2020-03.txt'
+	, 'profit loss summary custodian 2020-04.txt'
+	, 'profit loss summary custodian 2020-05.txt'
+	, 'profit loss summary custodian 2020-06.txt'
+	, 'profit loss summary custodian 2020-07.txt'
+	, 'profit loss summary custodian 2020-08.txt'
+	, 'profit loss summary custodian 2020-09.txt'
+	, 'profit loss summary custodian 2020-10.txt'
+	, 'profit loss summary custodian 2020-11.txt'
+	, 'profit loss summary custodian 2020-12.txt'
+	]
+
+	dailyInterestAccrualFiles = \
+	[ 'daily interest non-close 2020-01.txt'
+	, 'daily interest non-close 2020-02.txt'
+	, 'daily interest non-close 2020-03.txt'
+	, 'daily interest non-close 2020-04.txt'
+	, 'daily interest non-close 2020-05.txt'
+	, 'daily interest non-close 2020-06.txt'
+	, 'daily interest non-close 2020-07.txt'
+	, 'daily interest non-close 2020-08.txt'
+	, 'daily interest non-close 2020-09.txt'
+	, 'daily interest non-close 2020-10.txt'
+	, 'daily interest non-close 2020-11.txt'
+	, 'daily interest non-close 2020-12.txt'
+	]
+
+	return \
+	( addDirectory('purchase sales 2020-12.txt')
+	, list(map(addDirectory, cashLedgerFiles))
+	, list(map(addDirectory, profitLossSummaryFiles))
+	, list(map(addDirectory, dailyInterestAccrualFiles))
+	)

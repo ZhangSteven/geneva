@@ -543,8 +543,7 @@ def getResultFromFiles( purchaseSalesFile, cashLedgerFiles
 	  , partial(sorted, key=lambda t: t[0])
 	  , partial(map, lambda t: (t[1]['PeriodEndDate'], list(t[0])))
 	  , partial(map, partial(readCashLedgerTxtReport, 'utf-16', '\t'))
-	  , getCashLedgerFiles
-	)(config)
+	)(cashLedgerFiles)
 
 
 	return \
@@ -580,7 +579,7 @@ if __name__ == '__main__':
 	  , list(getProfitLossSummaryFiles(config))
 	  , list(getDailyInterestAccrualFiles(config))
 	  , True
-	  , True
+	  , False
 	 )
 
 
