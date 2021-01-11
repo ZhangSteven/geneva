@@ -9,7 +9,7 @@ from utils.iter import pop
 from utils.excel import worksheetToLines
 from utils.utility import fromExcelOrdinal
 from itertools import takewhile, groupby, count, dropwhile
-from functools import partial
+from functools import partial, reduce
 from os.path import abspath, dirname
 from datetime import datetime
 import codecs
@@ -159,9 +159,18 @@ def txtFileToLines(encoding, filename):
 
 
 
-def readTxtReportFromLines(delimiter, lines):
-	"""
-	[String] file => [Iterator] positions, [Dictionary] meta data
+# [String] delimeter, [String] line => [List] values in line
+stringToList = compose(
+	list
+  , partial(map, lambda s: s.strip())
+  , lambda delimiter, line: line.strip().split(delimiter)
+)
+
+
+
+"""
+	[Iterable] lines from a txt file
+		=> [Iterator] positions, [Dictionary] meta data
 
 	Read a Geneva report in txt file. The report is generated as below:
 
@@ -170,21 +179,52 @@ def readTxtReportFromLines(delimiter, lines):
 		Text (tab delimited), Unicode Text, Csv (comma delimited)
 
 	This function is to read "Text (tab delimited)" format.
-	"""
+"""
+readTxtReportFromLines = compose(
+	lambda t: (t[0], getTxtMetadata(t[1]))
+  , readReport
+)
 
-	# [String] delimeter, [String] line => [List] values in line
-	stringToList = compose(
-		list
-	  , partial(map, lambda s: s.strip())
-	  , lambda delimiter, line: line.strip().split(delimiter)
+
+
+def readMultipartTxtReportFromLines(lines):
+	"""
+	[Iterable] lines from a multipart txt file
+		=> [Iterator] ( [Iterable] positions
+					  , [Dictionary] meta data
+					  )
+
+	Read a multi part txt Geneva report. When we use Geneva to generate
+	report from a group of portfolios, if consolidation = None, then
+	we will have a multipart report.
+	"""
+	isErrorLine = lambda line: \
+		len(line) > 1 and (line[0], line[1]) == ('EventNumber', 'ErrorMessage')
+
+
+	"""
+		[Iterable] groups => [Iterable] lines
+		where each group is an iterable over lines, insert a blank
+		line in between two groups.
+	"""
+	groupsToLines = lambda groups: \
+		reduce(lambda g1, g2: chain(g1, [['']], g2), groups)
+
+
+	"""
+		[Iterable] lines => [Iterable] lines
+	"""
+	partition = compose(
+		partial(map, groupsToLines)
+	  , partial(filter, lambda t: t[0] == False)
+	  , lambda groups: groupby(groups, lambda group: isErrorLine(group[0]))
+	  , partial(map, lambda t: list(t[1]))
+	  , partial(filter, lambda t: t[0] == False)
+	  , lambda lines: groupby(lines, lambda line: len(line) == 0 or line[0] == '')
 	)
 
-	
-	return compose(
-		lambda t: (t[0], getTxtMetadata(t[1]))
-	  , readReport
-	  , partial(map, partial(stringToList, delimiter))
-	)(lines)
+
+	return partition(lines)
 
 
 
@@ -192,8 +232,17 @@ def readTxtReportFromLines(delimiter, lines):
 	[String] encoding, [String] delimiter, [String] filename
 	 => [Iterator] positions, [Dictionary] meta data
 """
+# readTxtReport = lambda encoding, delimiter, file: \
+# 	readTxtReportFromLines( delimiter
+# 						  , map( partial(stringToList, delimiter)
+# 						  	   , txtFileToLines(encoding, file)))
+
 readTxtReport = lambda encoding, delimiter, file: \
-	readTxtReportFromLines(delimiter, txtFileToLines(encoding, file))
+compose(
+	readTxtReportFromLines
+  , partial(map, partial(stringToList, delimiter))
+  , partial(txtFileToLines, encoding)
+)(file)
 
 
 
@@ -439,7 +488,8 @@ compose(
 	  	, 'TotalGL_taxlot': updateNumber
 	  	}
   	)
-  , partial(readTxtReportFromLines, delimiter)
+  , readTxtReportFromLines
+  , partial(map, partial(stringToList, delimiter))
   , partial(skipFirstN, 3)
   , partial(txtFileToLines, encoding)
 )(file)
