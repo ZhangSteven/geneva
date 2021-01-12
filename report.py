@@ -12,6 +12,8 @@ from itertools import takewhile, groupby, count, dropwhile, chain
 from functools import partial, reduce
 from os.path import abspath, dirname
 from datetime import datetime
+from steven_utils.utility import mergeDict
+from steven_utils.iter import skipN
 import codecs
 import logging
 logger = logging.getLogger(__name__)
@@ -89,8 +91,9 @@ def groupMultipartReportLines(lines):
 	"""
 		[Iterable] lines => [Iterable] groups
 
-		Where each group is an iterable over lines of one portfolio in the
-		multiple report.
+		Divide lines from a multipart report into groups, where each group 
+		is an iterable over lines of one portfolio. Note that lines in
+		the error section are not included in the output.
 	"""
 	isErrorLine = lambda line: \
 		len(line) > 1 and (line[0], line[1]) == ('EventNumber', 'ErrorMessage')
@@ -152,11 +155,6 @@ getCurrentDirectory = lambda : \
 	dirname(abspath(__file__))
 
 
-# [Dictioanry] d1, [Dictioanry] d2 => [Dictionary] merged d
-mergeDict = lambda d1, d2: \
-	{**d1, **d2}
-
-
 
 """
 	[Dictionary] functionMap (key -> function), [Dictionary] d
@@ -184,26 +182,33 @@ getExcelMetadata = lambda metadata: \
 
 
 
-# [String] encoding, [String] filename => [Iterable] lines
-def txtFileToLines(encoding, filename):
-	with codecs.open(filename, 'r', encoding=encoding) as file:
-		for line in file:
-			yield line
+def txtReportToLines(encoding, delimiter, file):
+	"""
+	[String] encoding, [String] delimiter, [String] filename, 
+		=> [Iterable] ([List] lines)
+	"""
+	def txtFileToLines(encoding, filename):
+		with codecs.open(filename, 'r', encoding=encoding) as file:
+			for line in file:
+				yield line
 
 
+	# [String] delimeter, [String] line => [List] values in line
+	stringToList = compose(
+		list
+	  , partial(map, lambda s: s.strip())
+	  , partial(map, lambda s: s[1:] if len(s) > 0 and s[0] == '\ufeff' else s)
+	  , lambda delimiter, line: line.strip().split(delimiter)
+	)
 
-# [String] delimeter, [String] line => [List] values in line
-stringToList = compose(
-	list
-  , partial(map, lambda s: s.strip())
-  , partial(map, lambda s: s[1:] if len(s) > 0 and s[0] == '\ufeff' else s)
-  , lambda delimiter, line: line.strip().split(delimiter)
-)
+
+	return map( partial(stringToList, delimiter)
+			  , txtFileToLines(encoding, file))
 
 
 
 """
-	[Iterable] lines from a txt file
+	[Iterable] ([List] lines)
 		=> [Iterator] positions, [Dictionary] meta data
 
 	Read a Geneva report in txt file. The report is generated as below:
@@ -225,27 +230,10 @@ readTxtReportFromLines = compose(
 	[String] encoding, [String] delimiter, [String] filename
 	 => [Iterator] positions, [Dictionary] meta data
 """
-readTxtReport = lambda encoding, delimiter, file: \
-compose(
+readTxtReport = compose(
 	readTxtReportFromLines
-  , partial(map, partial(stringToList, delimiter))
-  , partial(txtFileToLines, encoding)
-)(file)
-
-
-
-"""	
-	[String] encoding, [String] delimiter, [String] filename
-	 => [Iterator] positions, [Dictionary] meta data
-"""
-readMultipartTxtReport = lambda encoding, delimiter, file: \
-compose(
-	partial(map, readTxtReportFromLines)
-  , groupMultipartReportLines
-  , partial(map, partial(stringToList, delimiter))
-  , partial(txtFileToLines, encoding)
-)(file)
-
+  , txtReportToLines
+)
 
 
 
@@ -338,32 +326,47 @@ readTaxlotTxtReport = compose(
 
 
 """
+	[Iterable] ([List] lines)
+		=> ([Iterable] positions, [Dictionary] metadata)
+
+	positions updated, meta data unchanged.
+"""
+readInvestmentTxtReportFromLines = compose(
+	partial(
+		updatePositionWithFunctionMap
+	  , { 'Quantity': updateNumber
+		, 'LocalPrice': updateNumber
+		, 'CostLocal': updateNumber
+		, 'CostBook': updateNumber
+		, 'BookUnrealizedGainOrLoss': updateNumber
+		, 'AccruedInterest': updateNumber
+		, 'MarketValueBook': updateNumber
+		, 'Invest': numberFromPercentString
+		}
+	)
+
+  , readTxtReportFromLines
+)
+
+
+"""
 	[String] encoding, [String] delimiter, [String] file
 		=> [Iterator] positions, [Dictionary] metadata
 """
-investmentTxtReportUpdater = partial(
-	updatePositionWithFunctionMap
-  , { 'Quantity': updateNumber
-	, 'LocalPrice': updateNumber
-	, 'CostLocal': updateNumber
-	, 'CostBook': updateNumber
-	, 'BookUnrealizedGainOrLoss': updateNumber
-	, 'AccruedInterest': updateNumber
-	, 'MarketValueBook': updateNumber
-	, 'Invest': numberFromPercentString
-	}
-)
-
-
 readInvestmentTxtReport = compose(
-	investmentTxtReportUpdater
-  , readTxtReport
+	readInvestmentTxtReportFromLines
+  , txtReportToLines
 )
 
 
+"""	
+	[String] encoding, [String] delimiter, [String] filename
+		=> [Iterable] ([Iterable] positions, [Dictionary] meta data)
+"""
 readMultipartInvestmentTxtReport = compose(
-	partial(map, investmentTxtReportUpdater)
-  , readMultipartTxtReport
+	partial(map, readInvestmentTxtReportFromLines)
+  , groupMultipartReportLines
+  , txtReportToLines
 )
 
 
@@ -454,54 +457,59 @@ readDailyInterestAccrualDetailTxtReport = compose(
 
 
 """
-	[Int] n (n > 0), [Iterable] items
-		=> [Iterable] items after skipping the first n elements
+	[Itereable] ([List] lines)
+		=> ([Iterable] positions, [Dictionary] meta data)
 """
-skipFirstN = lambda n, items: \
-compose(
-	partial(map, lambda t: t[1])
-  , partial(dropwhile, lambda t: t[0] < n)
-  , partial(zip, count(0))
-)(items)
+readProfitLossSummaryWithTaxLotTxtReportFromLines = compose(
+	partial(
+		updatePositionWithFunctionMap
+	  , { 'TaxLotId': lambda s: s if s == '' else s.split(':')[1].strip()
+		, 'Quantity': updateNumber
+		, 'Cost': updateNumber
+		, 'MarketPrice': updateNumber
+		, 'MarketValue': updateNumber
+		, 'RealizedPriceGL': updateNumber
+		, 'RealizedFXGL': updateNumber
+		, 'UnrealizedPriceGL': updateNumber
+		, 'UnrealizedFXGL': updateNumber
+		, 'CouponDividend': updateNumber
+		, 'OtherIncome': updateNumber
+		, 'TotalGainLoss': updateNumber
+		, 'Qty_taxlot': updateNumber
+		, 'Cst_taxlot': updateNumber
+		, 'MktPriceEnd_taxlot': updateNumber
+		, 'MVal_taxlot': updateNumber
+		, 'RealGLPrice_taxlot': updateNumber
+		, 'RealFX_taxlot': updateNumber
+		, 'UnrealGLPrice_taxlot': updateNumber
+		, 'UnrealFX_taxlot': updateNumber
+		, 'Coupon_taxlot': updateNumber
+		, 'OtherIncome_taxlot': updateNumber
+		, 'TotalGL_taxlot': updateNumber
+		}
+	)
 
+  , readTxtReportFromLines
+  , partial(skipN, 3)
+)
 
 
 """
 	[String] encoding, [String] delimiter, [String] file
 		=> [Iterator] positions, [Dictionary] metadata
-
 """
-readProfitLossSummaryWithTaxLotTxtReport = lambda encoding, delimiter, file: \
-compose(
-	partial(
-	  	updatePositionWithFunctionMap
-	  , { 'TaxLotId': lambda s: s if s == '' else s.split(':')[1].strip()
-	  	, 'Quantity': updateNumber
-	  	, 'Cost': updateNumber
-	  	, 'MarketPrice': updateNumber
-	  	, 'MarketValue': updateNumber
-	  	, 'RealizedPriceGL': updateNumber
-	  	, 'RealizedFXGL': updateNumber
-	  	, 'UnrealizedPriceGL': updateNumber
-	  	, 'UnrealizedFXGL': updateNumber
-	  	, 'CouponDividend': updateNumber
-	  	, 'OtherIncome': updateNumber
-	  	, 'TotalGainLoss': updateNumber
-	  	, 'Qty_taxlot': updateNumber
-	  	, 'Cst_taxlot': updateNumber
-	  	, 'MktPriceEnd_taxlot': updateNumber
-	  	, 'MVal_taxlot': updateNumber
-	  	, 'RealGLPrice_taxlot': updateNumber
-	  	, 'RealFX_taxlot': updateNumber
-	  	, 'UnrealGLPrice_taxlot': updateNumber
-	  	, 'UnrealFX_taxlot': updateNumber
-	  	, 'Coupon_taxlot': updateNumber
-	  	, 'OtherIncome_taxlot': updateNumber
-	  	, 'TotalGL_taxlot': updateNumber
-	  	}
-  	)
-  , readTxtReportFromLines
-  , partial(map, partial(stringToList, delimiter))
-  , partial(skipFirstN, 3)
-  , partial(txtFileToLines, encoding)
-)(file)
+readProfitLossSummaryWithTaxLotTxtReport = compose(
+	readProfitLossSummaryWithTaxLotTxtReportFromLines
+  , txtReportToLines
+)
+
+
+"""	
+	[String] encoding, [String] delimiter, [String] filename
+		=> [Iterable] ([Iterable] positions, [Dictionary] meta data)
+"""
+readMultipartProfitLossSummaryWithTaxLotTxtReport = compose(
+	partial(map, readProfitLossSummaryWithTaxLotTxtReportFromLines)
+  , groupMultipartReportLines
+  , txtReportToLines
+)
