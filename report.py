@@ -372,10 +372,10 @@ readMultipartInvestmentTxtReport = compose(
 
 
 """
-	[String] encoding, [String] delimiter, [String] file
-		=> [Iterator] positions, [Dictionary] metadata
+	[Itereable] ([List] lines)
+		=> ([Iterable] positions, [Dictionary] meta data)
 """
-readProfitLossTxtReport = compose(
+readProfitLossTxtReportFromLines = compose(
 	partial(
 	  	updatePositionWithFunctionMap
 	  , { 'EndingQuantity': updateNumber
@@ -395,7 +395,29 @@ readProfitLossTxtReport = compose(
 	  	, 'RealizedCross': updateNumber
 	  	}
   	)
-  , readTxtReport
+
+  , readTxtReportFromLines
+)
+
+
+"""
+	[String] encoding, [String] delimiter, [String] file
+		=> [Iterator] positions, [Dictionary] metadata
+"""
+readProfitLossTxtReport = compose(
+	readProfitLossTxtReportFromLines
+  , txtReportToLines
+)
+
+
+"""
+	[String] encoding, [String] delimiter, [String] file
+		=> [Iterator] positions, [Dictionary] metadata
+"""
+readMultipartProfitLossTxtReport = compose(
+	partial(map, readProfitLossTxtReportFromLines)
+  , groupMultipartReportLines
+  , txtReportToLines
 )
 
 
@@ -490,7 +512,8 @@ readProfitLossSummaryWithTaxLotTxtReportFromLines = compose(
 	)
 
   , readTxtReportFromLines
-  , partial(skipN, 3)
+  , partial(skipN, 1)
+  , partial(dropwhile, lambda line: len(line) > 0 and line[0] != '')
 )
 
 
@@ -504,7 +527,7 @@ readProfitLossSummaryWithTaxLotTxtReport = compose(
 )
 
 
-"""	
+"""
 	[String] encoding, [String] delimiter, [String] filename
 		=> [Iterable] ([Iterable] positions, [Dictionary] meta data)
 """

@@ -7,7 +7,9 @@ from geneva.report import getCurrentDirectory, readExcelReport, readTxtReport \
 						, readProfitLossTxtReport, readCashLedgerTxtReport \
 						, readDailyInterestAccrualDetailTxtReport \
 						, readProfitLossSummaryWithTaxLotTxtReport \
-						, readMultipartInvestmentTxtReport
+						, readMultipartInvestmentTxtReport \
+						, readProfitLossSummaryWithTaxLotTxtReport \
+						, readMultipartProfitLossSummaryWithTaxLotTxtReport
 from steven_utils.iter import firstN
 from os.path import join
 
@@ -125,6 +127,18 @@ class TestReport(unittest2.TestCase):
 
 
 
+	def testReadMultipartProfitLossSummaryWithTaxLotTxtReport(self):
+		inputFile = join(getCurrentDirectory(), 'samples', '12xxx multipart profit loss summary tax lot.txt')
+		result = list(readMultipartProfitLossSummaryWithTaxLotTxtReport('utf-16', '\t', inputFile))
+		self.assertEqual(6, len(result))
+		self.assertEqual( ['12229', '12366', '12549', '12550', '12630', '12734']
+						, list(map(lambda t: t[1]['Portfolio'], result)))
+		self.verifyProfitlossSummaryTaxlotPosition(list(result[0][0])[0])
+		self.assertEqual(0, len(list(result[3][0])))
+		self.verifyProfitlossSummaryTaxlotPosition2(list(result[5][0])[-1])
+
+
+
 	def verifyMetaData(self, metaData):
 		self.assertEqual('20051', metaData['Portfolio'])
 		self.assertEqual('HKD', metaData['BookCurrency'])
@@ -201,6 +215,28 @@ class TestReport(unittest2.TestCase):
 		self.assertEqual('NA', position['LocalPrice'])
 		self.assertEqual(-31172.16, position['BookUnrealizedGainOrLoss'])
 		self.assertEqual(0.0002, position['Invest'])
+
+
+
+	def verifyProfitlossSummaryTaxlotPosition(self, position):
+		self.assertEqual('Cash and Equivalents', position['Group1'])
+		self.assertEqual('CNY: Chinese Renminbi Yuan', position['Invest'])
+		self.assertEqual(6269303.08, position['Quantity'])
+		self.assertEqual(60139.60, position['UnrealizedFXGL'])
+		self.assertEqual(7446766.41, position['MVal_taxlot'])
+		self.assertEqual('', position['TaxLotId'])
+
+
+
+	def verifyProfitlossSummaryTaxlotPosition2(self, position):
+		self.assertEqual( 'Bank of China Hong Kong (CLO BondConnect_internal ref.)'
+						, position['Group2'])
+		self.assertEqual( 'CND10003VYQ5: EXIMCH 3.74 11/16/30 2011'
+						, position['Invest'])
+		self.assertEqual(100.768, position['MarketPrice'])
+		self.assertEqual(453289.56, position['CouponDividend'])
+		self.assertEqual(188870.65, position['Coupon_taxlot'])
+		self.assertEqual('1140969', position['TaxLotId'])
 
 
 
