@@ -5,6 +5,7 @@
 
 from geneva.report import readInvestmentTxtReport, readProfitLossTxtReport \
 						, getCurrentDirectory
+from geneva.constants import Constants
 from utils.utility import allEquals, writeCsv
 from utils.file import getFiles
 from toolz.functoolz import compose
@@ -13,6 +14,67 @@ from functools import partial
 from os.path import join
 import logging
 logger = logging.getLogger(__name__)
+
+
+
+def run(dataDirectory, userConfigFile):
+	"""
+	[String] data directory (where user input files are stored),
+	[String] user config file (where run time parameters are stored)
+
+	 => [Tuple] ( [Int] run result
+	 			, [String] message
+	 			)
+
+	run result:
+	 0: there are input files, run successful
+	-1: there are input files, run failed
+	 1: there are no input files
+
+	This function does not throw exceptions.
+	"""
+	logger.debug('run(): start')
+	
+	investmentFiles, profitLossFiles = \
+		list(getInvestmentFiles(dataDirectory)) \
+	  , list(getProfitLossFiles(dataDirectory))
+
+
+	if len(investmentFiles) == 0 or len(profitLossFiles) == 0:
+		return (Constants.NO_FILE, '')
+
+
+	try:
+		config = configparser.ConfigParser()
+		config.read(userConfigFile)
+
+		withCash, withoutCash = \
+			getResultFromFiles( investmentFiles
+							  , profitLossFiles
+							  , float(config['Input']['lastYearEndNavWithCash'])
+							  , float(config['Input']['lastYearEndNavWithOutCash'])
+							  , float(config['Input']['impairment'])
+							  , int(config['Input']['cutoffMonth'])
+							  )
+
+		file1 = \
+			writeOutputCsv( dataDirectory, 'with cash', withCash
+						  , config['Input']['lastYearEndNavWithCash']
+						  , config['Input']['impairment']
+						  , int(config['Input']['cutoffMonth']))
+
+		file2 = \
+			writeOutputCsv( dataDirectory, 'without cash', withoutCash
+						  , config['Input']['lastYearEndNavWithOutCash']
+						  , config['Input']['impairment']
+						  , int(config['Input']['cutoffMonth']))
+
+		return ( Constants.SUCCESS
+			   , 'output files: {0}, {1}'.format(file1, file2))
+
+	except:
+		logger.exception('run():')
+		return (Constants.FAILURE, '')
 
 
 
@@ -307,10 +369,16 @@ getProfitLossFiles = partial(
 
 
 """
-	[String] filename, [Dictionary] typeCount => [String] output csv name
+	[String] output directory
+	[String] file name suffix,
+	[Float] last year end nav,
+	[Float] impairment,
+	[Int] cutoff month, 
+		=> [String] output csv name
 """
-writeOutputCsv = lambda suffix, data, lastYearEndNav, impairment, cutoffMonth: \
-	writeCsv( 'CLO bond yield ' + suffix + '.csv' 
+writeOutputCsv = lambda outputDirectory, suffix, data \
+					, lastYearEndNav, impairment, cutoffMonth: \
+	writeCsv( join(outputDirectory, 'CLO bond yield ' + suffix + '.csv')
 			, chain( [( 'Month', 'Accumulated Realized Return', 'Return Rate'
 					  , 'Accumulated Total Return', 'Return Rate', 'Average Nav')]
 				   , map(lambda t: (t[0], *t[1]), zip(count(1), data))
@@ -329,41 +397,15 @@ if __name__ == '__main__':
 	import logging.config
 	logging.config.fileConfig('logging.config', disable_existing_loggers=False)
 
-	import argparse
-	parser = argparse.ArgumentParser(description='Calculate Portfolio Yield')
-	parser.add_argument( 'cutoff', metavar='cutoff', type=int
-					   , help='cutoff month, the last month when the CN Energy bond interest income is offset in PL report.')
-	cutoffMonth = parser.parse_args().cutoff
-
 	import configparser
 	config = configparser.ConfigParser()
 	config.read('calculate_yield.config')
 
 	"""
-		Generate an investment position report, then:
-
-		$python calculate_yield.py <cutoff month>
-
-		The cutoff month is determined by the underlying data. For example, 
-		if July is the last month when the fund accounting team booked the
-		offset for CN Energy interest income. Then cutoff = 7.
+		To run the program, users must supply the data files and
+		fill in data into the configure file. The data files are
+		stored under the directory specified by the 'dataDirectory',
+		and configure file specified by 'userConfigFile'.
 	"""
-	withCash, withoutCash = \
-		getResultFromFiles( getInvestmentFiles(config['Input']['dataDirectory'])
-						  , getProfitLossFiles(config['Input']['dataDirectory'])
-						  , float(config['Input']['lastYearEndNavWithCash'])
-						  , float(config['Input']['lastYearEndNavWithOutCash'])
-						  , float(config['Input']['impairment'])
-						  , cutoffMonth)
-
-	print(writeOutputCsv( 'with cash'
-					  	, withCash
-					  	, config['Input']['lastYearEndNavWithCash']
-					  	, config['Input']['impairment']
-					  	, cutoffMonth))
-
-	print(writeOutputCsv( 'without cash'
-					  	, withoutCash
-					  	, config['Input']['lastYearEndNavWithOutCash']
-					  	, config['Input']['impairment']
-					  	, cutoffMonth))
+	print(run( config['Input']['dataDirectory']
+			 , join(config['Input']['dataDirectory'], config['Input']['userConfigFile'])))
