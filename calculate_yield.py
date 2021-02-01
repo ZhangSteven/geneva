@@ -6,12 +6,16 @@
 from geneva.report import readInvestmentTxtReport, readProfitLossTxtReport \
 						, getCurrentDirectory
 from geneva.constants import Constants
-from utils.utility import allEquals, writeCsv
-from utils.file import getFiles
+from steven_utils.utility import allEquals, writeCsv
+from steven_utils.file import getFiles, getFilenameWithoutPath
+from steven_utils.mail import sendMail
 from toolz.functoolz import compose
 from itertools import accumulate, count, chain
 from functools import partial
 from os.path import join
+from os import mkdir
+from datetime import datetime
+import shutil
 import logging
 logger = logging.getLogger(__name__)
 
@@ -39,11 +43,26 @@ def run(dataDirectory, userConfigFile):
 		list(getInvestmentFiles(dataDirectory)) \
 	  , list(getProfitLossFiles(dataDirectory))
 
-
 	if len(investmentFiles) == 0 or len(profitLossFiles) == 0:
-		return (Constants.NO_FILE, '')
+		logger.debug('run(): no input files found')
+		return
+
+	status, message = handleInputFiles( dataDirectory, investmentFiles
+									  , profitLossFiles, userConfigFile)
+	sendNotificationEmail('Yield Calculation', status, message)
+	moveFiles(getProcessedDirectory(dataDirectory), investmentFiles, profitLossFiles)
 
 
+
+def handleInputFiles( dataDirectory, investmentFiles
+					, profitLossFiles, userConfigFile):
+	"""
+	[String] data directory
+	[List] investment files
+	[List] profit loss files
+	[String] user config file
+		=> ([Int] status, [String] message)
+	"""
 	try:
 		config = configparser.ConfigParser()
 		config.read(userConfigFile)
@@ -70,7 +89,7 @@ def run(dataDirectory, userConfigFile):
 						  , int(config['Input']['cutoffMonth']))
 
 		return ( Constants.SUCCESS
-			   , 'output files: {0}, {1}'.format(file1, file2))
+			   , 'output files:\n{0}, {1}'.format(file1, file2))
 
 	except:
 		logger.exception('run():')
@@ -393,6 +412,84 @@ writeOutputCsv = lambda outputDirectory, suffix, data \
 
 
 
+def sendNotificationEmail(about, status, message):
+	"""
+	[String] about, [Int] status, [String] message
+
+	send email to notify the status. 
+	"""
+	getSubject = lambda about, status: \
+		about + ' Succesful' \
+		if status == Constants.SUCCESS else \
+		about + ' Failed'
+
+	logger.debug('sendNotificationEmail(): {0}'.format(about))
+	sendMail( message
+			, getSubject(about, status)
+			, getMailSender()
+			, getNotificationMailRecipients()
+			, getMailServer()
+			, getMailTimeout())
+
+
+
+def getProcessedDirectory(dataDirectory):
+	"""
+	[String] data directory
+		=> [String] output directory
+
+	Side effect:
+	create an output directory under the data directory
+	"""
+	directory = join( dataDirectory
+					, 'processed ' + datetime.now().strftime('%Y%m%d%H%M%S'))
+
+	logger.debug('getProcessedDirectory(): {0}'.format(directory))
+	mkdir(directory)
+	return directory
+
+
+
+def moveFiles(outputDir, investmentFiles, profitLossFiles):
+	"""
+	[String] outputDir, 
+	[List] investment files,
+	[List] profit loss files
+		=> 
+
+	Side effect: move investment files and profit loss files
+	to the target directory.
+	"""
+	for fn in (investmentFiles + profitLossFiles):
+		shutil.move(fn, join(outputDir, getFilenameWithoutPath(fn)))
+
+
+
+def getMailSender():
+	global config
+	return config['email']['sender']
+
+
+
+def getMailServer():
+	global config
+	return config['email']['server']
+
+
+
+def getMailTimeout():
+	global config
+	return float(config['email']['timeout'])
+
+
+
+def getNotificationMailRecipients():
+	global config
+	return config['email']['notificationMailRecipients']
+
+
+
+
 if __name__ == '__main__':
 	import logging.config
 	logging.config.fileConfig('logging.config', disable_existing_loggers=False)
@@ -407,7 +504,6 @@ if __name__ == '__main__':
 		stored under the directory specified by the 'dataDirectory',
 		and configure file specified by 'userConfigFile'.
 	"""
-	status, message = \
-		run( config['Input']['dataDirectory']
-		   , join( config['Input']['dataDirectory']
-		   		 , config['Input']['userConfigFile']))
+	run( config['Input']['dataDirectory']
+	   , join( config['Input']['dataDirectory']
+	   		 , config['Input']['userConfigFile']))
