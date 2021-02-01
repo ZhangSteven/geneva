@@ -407,5 +407,7 @@ if __name__ == '__main__':
 		stored under the directory specified by the 'dataDirectory',
 		and configure file specified by 'userConfigFile'.
 	"""
-	print(run( config['Input']['dataDirectory']
-			 , join(config['Input']['dataDirectory'], config['Input']['userConfigFile'])))
+	status, message = \
+		run( config['Input']['dataDirectory']
+		   , join( config['Input']['dataDirectory']
+		   		 , config['Input']['userConfigFile']))
