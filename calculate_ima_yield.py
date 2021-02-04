@@ -583,6 +583,9 @@ if __name__ == '__main__':
 	 )
 
 
+	run(config, userConfigFile)
+
+
 	# Generate the tax lot ids in 2020 Nov accumulated interest
 	# income.
 	# compose(
