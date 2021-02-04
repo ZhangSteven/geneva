@@ -50,7 +50,9 @@ def run(dataDirectory, userConfigFile):
 	status, message = handleInputFiles( dataDirectory, investmentFiles
 									  , profitLossFiles, userConfigFile)
 	sendNotificationEmail('Yield Calculation', status, message)
-	moveFiles(getProcessedDirectory(dataDirectory), investmentFiles, profitLossFiles)
+	processedDirectory = getProcessedDirectory(dataDirectory)
+	moveFiles(processedDirectory, investmentFiles)
+	moveFiles(processedDirectory, profitLossFiles)
 
 
 
@@ -450,17 +452,15 @@ def getProcessedDirectory(dataDirectory):
 
 
 
-def moveFiles(outputDir, investmentFiles, profitLossFiles):
+def moveFiles(outputDir, files):
 	"""
 	[String] outputDir, 
-	[List] investment files,
-	[List] profit loss files
+	[List] files
 		=> 
 
-	Side effect: move investment files and profit loss files
-	to the target directory.
+	Side effect: move files to the target directory.
 	"""
-	for fn in (investmentFiles + profitLossFiles):
+	for fn in files:
 		shutil.move(fn, join(outputDir, getFilenameWithoutPath(fn)))
 
 
