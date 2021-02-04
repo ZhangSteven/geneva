@@ -9,6 +9,7 @@ from geneva.report import readCashLedgerTxtReport, readTaxlotTxtReport \
 						, readTxtReport
 from geneva.calculate_yield import getFilesWithFilterFunc, moveFiles \
 								, sendNotificationEmail, getProcessedDirectory
+from geneva.utility import getImaDataDirectory, getUserConfigFile
 # from clamc_yield_report.ima import getTaxlotInterestIncome
 from geneva.constants import Constants
 from steven_utils.file import getFiles
@@ -20,7 +21,7 @@ from itertools import accumulate, filterfalse, chain, count
 from functools import partial, reduce
 from os.path import join
 from datetime import datetime
-import logging
+import logging, configparser
 logger = logging.getLogger(__name__)
 
 
@@ -42,6 +43,7 @@ def run(dataDirectory, userConfigFile):
 		   , len(profitLossSummaryFiles) == 0
 		   , len(dailyInterestAccrualFiles) == 0]):
 		logger.debug('no input files')
+		return
 
 	if len(purchaseSalesFiles) > 1:
 		logger.error('too many purchase sale file: {0}'.format(len(purchaseSalesFiles)))
@@ -85,7 +87,13 @@ def handleInputFiles( purchaseSalesFile, cashLedgerFiles, profitLossSummaryFiles
 
 		compose(
 			partial(writeCsv, outputFile)
-		  , partial(chain, [('interest income', 'realized gain', 'fair value change', 'time weighted capital')])
+		  , partial(chain, [ ( 'interest income', 'realized gain', 'realized return rate'
+		  				   	 , 'fair value change', 'total return rate', 'time weighted capital')]
+		  		   )
+		  , partial( map
+		  		   , lambda t: ( t[0], t[1], (t[0]+t[1])/t[3]*100 if t[3] != 0 else ''
+		  		   			   , t[2], (t[0]+t[1]+t[2])/t[3]*100 if t[3] != 0 else '', t[3])
+		  		   )
 		  , partial( map
 		  		   , lambda t: (addValues(t[0]), addValues(t[1]), addValues(t[2]), t[3]))
 		  , lambda t: zip(*t)
@@ -95,8 +103,8 @@ def handleInputFiles( purchaseSalesFile, cashLedgerFiles, profitLossSummaryFiles
 		 , cashLedgerFiles
 		 , profitLossSummaryFiles
 		 , dailyInterestAccrualFiles
-		 , config['Input']['userAllTaxlots']==1
-		 , config['Input']['bondConnect']==1
+		 , config['Input']['userAllTaxlots']=='True'
+		 , config['Input']['bondConnect']=='True'
 		 )
 
 		return (Constants.SUCCESS, 'output file:\n{0}'.format(outputFile))
@@ -640,32 +648,8 @@ if __name__ == '__main__':
 	import logging.config
 	logging.config.fileConfig('logging.config', disable_existing_loggers=False)
 
-	import configparser
-	config = configparser.ConfigParser()
-	config.read('calculate_ima_yield.config')
-
-
-	# addValues = lambda d: sum(d.values())
-	# compose(
-	# 	partial(writeCsv, 'ima result.csv')
-	#   , partial(chain, [('interest income', 'realized gain', 'fair value change', 'time weighted capital')])
-	#   , partial( map
-	#   		   , lambda t: (addValues(t[0]), addValues(t[1]), addValues(t[2]), t[3]))
-	#   , lambda t: zip(*t)
-	#   , getResultFromFiles
-
-	# )(	getPurchaseSalesFile(config)
-	#   , list(getCashLedgerFiles(config))
-	#   , list(getProfitLossSummaryFiles(config))
-	#   , list(getDailyInterestAccrualFiles(config))
-	#   , True
-	#   , False
-	#  )
-
-
-	run( config['Input']['dataDirectory']
-	   , join( config['Input']['dataDirectory']
-	   		 , config['Input']['userConfigFile'])
+	run( getImaDataDirectory()
+	   , join(getImaDataDirectory(), getUserConfigFile())
 	   )
 
 
