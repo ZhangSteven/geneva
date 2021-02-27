@@ -6,3 +6,6 @@ logs/*
 
 # ignore the output csv files
 *.csv
+
+# ignore the config files
+yield_calculation.config

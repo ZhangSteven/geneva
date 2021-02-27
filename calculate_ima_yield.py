@@ -7,11 +7,13 @@ from geneva.report import readCashLedgerTxtReport, readTaxlotTxtReport \
 						, readDailyInterestAccrualDetailTxtReport \
 						, readProfitLossSummaryWithTaxLotTxtReport \
 						, readTxtReport
-from geneva.calculate_yield import getFilesWithFilterFunc
+from geneva.calculate_yield import getFilesWithFilterFunc, moveFiles \
+								, sendNotificationEmail, getProcessedDirectory
+from geneva.utility import getImaDataDirectory, getUserConfigFile
 # from clamc_yield_report.ima import getTaxlotInterestIncome
-from utils.file import getFiles
-from utils.utility import writeCsv
-from steven_utils.utility import mergeDict
+from geneva.constants import Constants
+from steven_utils.file import getFiles
+from steven_utils.utility import mergeDict, allEquals, writeCsv
 from toolz.functoolz import compose
 from toolz.itertoolz import groupby as groupbyToolz
 from toolz.dicttoolz import valmap
@@ -19,8 +21,97 @@ from itertools import accumulate, filterfalse, chain, count
 from functools import partial, reduce
 from os.path import join
 from datetime import datetime
-import logging
+import logging, configparser
 logger = logging.getLogger(__name__)
+
+
+
+def run(dataDirectory, userConfigFile):
+	"""
+	[String] data directory,
+	[String] user config file
+	"""
+	logger.debug('run(): start')
+
+	purchaseSalesFiles = list(getPurchaseSalesFiles(dataDirectory))
+	cashLedgerFiles = list(getCashLedgerFiles(dataDirectory))
+	profitLossSummaryFiles = list(getProfitLossSummaryFiles(dataDirectory))
+	dailyInterestAccrualFiles = list(getDailyInterestAccrualFiles(dataDirectory))
+
+	if any([ len(purchaseSalesFiles) == 0
+		   , len(cashLedgerFiles) == 0
+		   , len(profitLossSummaryFiles) == 0
+		   , len(dailyInterestAccrualFiles) == 0]):
+		logger.debug('no input files')
+		return
+
+	if len(purchaseSalesFiles) > 1:
+		logger.error('too many purchase sale file: {0}'.format(len(purchaseSalesFiles)))
+		return
+
+	if not allEquals([ len(cashLedgerFiles)
+					 , len(profitLossSummaryFiles)
+					 , len(dailyInterestAccrualFiles)]):
+		logger.error('inconsistent number of files')
+		return
+
+	status, message = handleInputFiles( purchaseSalesFiles[0], cashLedgerFiles
+									  , profitLossSummaryFiles, dailyInterestAccrualFiles
+									  , dataDirectory, userConfigFile)
+	sendNotificationEmail('IMA Yield Calculation', status, message)
+	processedDirectory = getProcessedDirectory(dataDirectory)
+	moveFiles(processedDirectory, purchaseSalesFiles)
+	moveFiles(processedDirectory, cashLedgerFiles)
+	moveFiles(processedDirectory, profitLossSummaryFiles)
+	moveFiles(processedDirectory, dailyInterestAccrualFiles)
+
+
+
+def handleInputFiles( purchaseSalesFile, cashLedgerFiles, profitLossSummaryFiles
+					, dailyInterestAccrualFiles, dataDirectory, userConfigFile):
+	"""
+	[List] purchase sales files,
+	[List] cash ledger files,
+	[List] profit loss summary files,
+	[List] daily interest accrual files,
+	[String] user config file
+		=> [Tuple] ([Int] status, [String] message)
+	"""
+	logger.debug('handleInputFiles()')
+	addValues = lambda d: sum(d.values())
+
+	try:
+		config = configparser.ConfigParser()
+		config.read(join(dataDirectory, userConfigFile))
+		outputFile = join(dataDirectory, 'ima result.csv')
+
+		compose(
+			partial(writeCsv, outputFile)
+		  , partial(chain, [ ( 'interest income', 'realized gain', 'realized return rate'
+		  				   	 , 'fair value change', 'total return rate', 'time weighted capital')]
+		  		   )
+		  , partial( map
+		  		   , lambda t: ( t[0], t[1], (t[0]+t[1])/t[3]*100 if t[3] != 0 else ''
+		  		   			   , t[2], (t[0]+t[1]+t[2])/t[3]*100 if t[3] != 0 else '', t[3])
+		  		   )
+		  , partial( map
+		  		   , lambda t: (addValues(t[0]), addValues(t[1]), addValues(t[2]), t[3]))
+		  , lambda t: zip(*t)
+		  , getResultFromFiles
+
+		)( purchaseSalesFile
+		 , cashLedgerFiles
+		 , profitLossSummaryFiles
+		 , dailyInterestAccrualFiles
+		 , config['Input']['userAllTaxlots']=='True'
+		 , config['Input']['bondConnect']=='True'
+		 )
+
+		return (Constants.SUCCESS, 'output file:\n{0}'.format(outputFile))
+
+	except:
+		logger.exception('run():')
+		return (Constants.FAILURE, '')
 
 
 
@@ -368,48 +459,45 @@ getAccumulatedRealizedGainLossFromFiles = compose(
 
 
 """
-	[Configure Object] config => [Iterable] profit loss summary files
+	[String] directory => [Iterable] profit loss summary files
 """
-getProfitLossSummaryFiles = lambda config: \
+getProfitLossSummaryFiles = lambda directory: \
 getFilesWithFilterFunc(
 	lambda fn: fn.startswith('profit loss summary') and fn.endswith('.txt')
-  , getInputDirectory(config)
+  , directory
 )
 
 
 
 """
-	[Configure Object] config => [Iterable] cash ledger files
+	[String] directory => [Iterable] cash ledger files
 """
-getCashLedgerFiles = lambda config: \
+getCashLedgerFiles = lambda directory: \
 getFilesWithFilterFunc(
 	lambda fn: fn.startswith('cash ledger') and fn.endswith('.txt')
-  , getInputDirectory(config)
+  , directory
 )
 
 
 
 """
-	[Configure Object] config => [Iterable] daily interest accrual files
+	[String] directory => [Iterable] daily interest accrual files
 """
-getDailyInterestAccrualFiles = lambda config: \
+getDailyInterestAccrualFiles = lambda directory: \
 getFilesWithFilterFunc(
 	lambda fn: fn.startswith('daily interest') and fn.endswith('.txt')
-  , getInputDirectory(config)
+  , directory
 )
 
 
 
 """
-	[Configure Object] config => [String] purchase sales file
+	[String] directory => [Iterable] purchase sales files
 """
-getPurchaseSalesFile = compose(
-	lambda m: list(m)[0]
-  , lambda config: \
-		getFilesWithFilterFunc(
-			lambda fn: fn.startswith('purchase sales') and fn.endswith('.txt')
-		  , getInputDirectory(config)
-		)
+getPurchaseSalesFiles = lambda directory: \
+getFilesWithFilterFunc(
+	lambda fn: fn.startswith('purchase sales') and fn.endswith('.txt')
+  , directory
 )
 
 
@@ -560,30 +648,9 @@ if __name__ == '__main__':
 	import logging.config
 	logging.config.fileConfig('logging.config', disable_existing_loggers=False)
 
-	import configparser
-	config = configparser.ConfigParser()
-	config.read('calculate_ima_yield.config')
-
-
-	addValues = lambda d: sum(d.values())
-	compose(
-		partial(writeCsv, 'ima result.csv')
-	  , partial(chain, [('interest income', 'realized gain', 'fair value change', 'time weighted capital')])
-	  , partial( map
-	  		   , lambda t: (addValues(t[0]), addValues(t[1]), addValues(t[2]), t[3]))
-	  , lambda t: zip(*t)
-	  , getResultFromFiles
-
-	)(	getPurchaseSalesFile(config)
-	  , list(getCashLedgerFiles(config))
-	  , list(getProfitLossSummaryFiles(config))
-	  , list(getDailyInterestAccrualFiles(config))
-	  , True
-	  , False
-	 )
-
-
-	run(config, userConfigFile)
+	run( getImaDataDirectory()
+	   , join(getImaDataDirectory(), getUserConfigFile())
+	   )
 
 
 	# Generate the tax lot ids in 2020 Nov accumulated interest

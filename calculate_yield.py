@@ -6,6 +6,9 @@
 from geneva.report import readInvestmentTxtReport, readProfitLossTxtReport \
 						, getCurrentDirectory
 from geneva.constants import Constants
+from geneva.utility import getMailSender, getMailServer, getMailTimeout \
+						, getNotificationMailRecipients, getDataDirectory \
+						, getUserConfigFile
 from steven_utils.utility import allEquals, writeCsv
 from steven_utils.file import getFiles, getFilenameWithoutPath
 from steven_utils.mail import sendMail
@@ -15,7 +18,7 @@ from functools import partial
 from os.path import join
 from os import mkdir
 from datetime import datetime
-import shutil
+import shutil, configparser
 import logging
 logger = logging.getLogger(__name__)
 
@@ -465,38 +468,11 @@ def moveFiles(outputDir, files):
 
 
 
-def getMailSender():
-	global config
-	return config['email']['sender']
-
-
-
-def getMailServer():
-	global config
-	return config['email']['server']
-
-
-
-def getMailTimeout():
-	global config
-	return float(config['email']['timeout'])
-
-
-
-def getNotificationMailRecipients():
-	global config
-	return config['email']['notificationMailRecipients']
-
-
-
 
 if __name__ == '__main__':
 	import logging.config
 	logging.config.fileConfig('logging.config', disable_existing_loggers=False)
 
-	import configparser
-	config = configparser.ConfigParser()
-	config.read('calculate_yield.config')
 
 	"""
 		To run the program, users must supply the data files and
@@ -504,6 +480,5 @@ if __name__ == '__main__':
 		stored under the directory specified by the 'dataDirectory',
 		and configure file specified by 'userConfigFile'.
 	"""
-	run( config['Input']['dataDirectory']
-	   , join( config['Input']['dataDirectory']
-	   		 , config['Input']['userConfigFile']))
+	run( getDataDirectory()
+	   , join(getDataDirectory(), getUserConfigFile()))
