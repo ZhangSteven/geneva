@@ -377,7 +377,7 @@ compose(
 """
 getInvestmentFiles = partial(
 	getFilesWithFilterFunc
-  , lambda fn: fn.startswith('investment positions') and fn.endswith('.txt')
+  , lambda fn: fn.lower().startswith('investment positions') and fn.endswith('.txt')
 )
 
 
@@ -387,7 +387,7 @@ getInvestmentFiles = partial(
 """
 getProfitLossFiles = partial(
 	getFilesWithFilterFunc
-  , lambda fn: fn.startswith('profit loss') and fn.endswith('.txt')
+  , lambda fn: fn.lower().startswith('profit loss') and fn.endswith('.txt')
 )
 
 
