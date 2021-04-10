@@ -164,7 +164,7 @@ getCurrentDirectory = lambda : \
 	updated for those keys in the functionMap. 
 """
 updateDictionaryWithFunction = lambda functionMap, d: \
-	mergeDict(d, {key: functionMap[key](d[key]) for key in functionMap})
+	mergeDict(d, {key: functionMap[key](d.get(key, '')) for key in functionMap})
 
 
 
@@ -239,11 +239,19 @@ readTxtReport = compose(
 
 # convert mm/dd/yyyy hh:mm date string to yyyy-mm-dd
 changeDateHourFormat = lambda s: \
+	'' if s == '' else \
 	datetime.strptime(s, '%m/%d/%Y %H:%M').strftime('%Y-%m-%d')
 
 
 # convert mm/dd/yyyy hh:mm date string to yyyy-mm-dd
+changeDateHourFormatWithMinutes = lambda s: \
+	'' if s == '' else \
+	datetime.strptime(s, '%m/%d/%Y %H:%M').strftime('%Y-%m-%d %H:%M')
+
+
+# convert mm/dd/yyyy hh:mm date string to yyyy-mm-dd
 changeDateFormat = lambda s: \
+	'' if s == '' else \
 	datetime.strptime(s, '%m/%d/%Y').strftime('%Y-%m-%d')
 
 
@@ -283,6 +291,7 @@ getTxtMetadata = partial(
 	updateDictionaryWithFunction
   , { 'PeriodEndDate': changeDateHourFormat
 	, 'PeriodStartDate': changeDateHourFormat
+	, 'KnowledgeDate': changeDateHourFormatWithMinutes
 	}
 )
 
